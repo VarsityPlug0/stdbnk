@@ -225,14 +225,20 @@ if __name__ == '__main__':
     # Initialize database on startup
     init_database()  # Create tables and default admin
     
+    # Get port from environment variable (Render sets this automatically)
+    port = int(os.environ.get('PORT', 3000))  # Use PORT env var or default to 3000
+    
     # Print application information
     print('Flask server starting...')
-    print('Server running on http://localhost:3000')
-    print('Admin panel available at http://localhost:3000/admin/login')
+    print(f'Server running on port {port}')
+    print('Admin panel available at /admin/login')
     
-    # Start Flask development server
+    # Start Flask application
+    # Use debug=False for production, but allow override with environment variable
+    debug_mode = os.environ.get('DEBUG', 'False').lower() == 'true'
+    
     app.run(
         host='0.0.0.0',  # Listen on all network interfaces
-        port=3000,  # Use port 3000 to match the previous Node.js setup
-        debug=True  # Enable debug mode for development
+        port=port,  # Use dynamic port for Render deployment
+        debug=debug_mode  # Enable debug mode only if explicitly set
     )

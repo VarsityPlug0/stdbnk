@@ -79,6 +79,49 @@ docker run -p 3000:3000 stdbnk-app
 ### GitHub Pages (Static hosting - not suitable for this app)
 This app requires a Python backend, so GitHub Pages won't work. Use the options below instead.
 
+## 🚀 Deploy to Render (Recommended)
+
+Render offers excellent free tier hosting with automatic deployments from GitHub.
+
+### One-Click Deploy
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/VarsityPlug0/stdbnk)
+
+### Manual Deployment Steps
+
+#### Step 1: Create Render Account
+1. Go to [render.com](https://render.com)
+2. Sign up with your GitHub account
+3. Authorize Render to access your repositories
+
+#### Step 2: Create Web Service
+1. Click "New +" → "Web Service"
+2. Select your `stdbnk` repository
+3. Configure the service:
+   - **Name**: `stdbnk-app` (or your preferred name)
+   - **Region**: Choose closest to your users
+   - **Branch**: `main`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python app.py`
+
+#### Step 3: Environment Variables
+Add these environment variables in Render dashboard:
+```bash
+SECRET_KEY=your-super-secret-key-here
+DEBUG=False
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-admin-password
+DATABASE_URL=sqlite:///database.db
+```
+
+#### Step 4: Deploy
+1. Click "Create Web Service"
+2. Wait for build to complete (2-3 minutes)
+3. Your app will be available at `https://your-app-name.onrender.com`
+
+### 🔄 Automatic Deployments
+Once set up, Render automatically deploys whenever you push to your GitHub repository!
+
 ### Heroku Deployment
 1. Create a `Procfile`:
 ```
@@ -90,6 +133,25 @@ web: python app.py
 heroku create your-app-name
 git push heroku main
 ```
+
+### Render Deployment (Recommended) 🌟
+1. **Sign up** at [render.com](https://render.com)
+2. **Connect GitHub**: Link your GitHub account
+3. **Create Web Service**: 
+   - Select your `stdbnk` repository
+   - Runtime: `Python 3`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python app.py`
+4. **Set Environment Variables**:
+   ```
+   SECRET_KEY=your-generated-secret-key
+   DEBUG=False
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=your-secure-password
+   ```
+5. **Deploy**: Click "Create Web Service"
+
+> ✨ **Auto-deploy**: Render automatically deploys when you push to GitHub!
 
 ### Railway Deployment
 1. Connect your GitHub repository to Railway
