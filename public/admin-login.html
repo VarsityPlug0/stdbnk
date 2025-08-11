@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login - Standard Bank</title>
+    <!-- Viewport meta tag for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Internal CSS for styling the admin login page -->
+    <style>
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif; /* Set font family to Arial with fallback */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+            display: flex; /* Use flexbox layout */
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+            min-height: 100vh; /* Full viewport height */
+        }
+
+        /* Login container styling */
+        .login-container {
+            background-color: #ffffff; /* White background for login box */
+            padding: 40px; /* Add 40px padding inside container */
+            border-radius: 10px; /* Round corners with 10px radius */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+            width: 90%; /* 90% width on mobile devices */
+            max-width: 400px; /* Maximum width of 400px */
+            text-align: center; /* Center align all text */
+        }
+
+        /* Heading styling */
+        .login-heading {
+            color: #333; /* Dark text color */
+            font-size: 28px; /* Large font size for heading */
+            font-weight: bold; /* Bold text */
+            margin-bottom: 30px; /* Space below heading */
+        }
+
+        /* Form group styling for input containers */
+        .form-group {
+            margin-bottom: 20px; /* Space below each form group */
+            text-align: left; /* Left align form content */
+        }
+
+        /* Label styling */
+        label {
+            display: block; /* Make label a block element */
+            margin-bottom: 8px; /* Space below label */
+            font-weight: bold; /* Bold label text */
+            color: #555; /* Medium gray color */
+        }
+
+        /* Input field styling */
+        input[type="text"],
+        input[type="password"] {
+            width: 100%; /* Full width of container */
+            padding: 12px; /* Padding inside input fields */
+            border: 2px solid #ddd; /* Light gray border */
+            border-radius: 6px; /* Rounded corners */
+            font-size: 16px; /* Font size for input text */
+            box-sizing: border-box; /* Include padding and border in width */
+            transition: border-color 0.3s ease; /* Smooth border color transition */
+        }
+
+        /* Input focus styling */
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none; /* Remove default focus outline */
+            border-color: #667eea; /* Change border color on focus */
+        }
+
+        /* Login button styling */
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: #fff; /* White text color */
+            border: none; /* Remove default border */
+            padding: 12px 30px; /* Vertical and horizontal padding */
+            border-radius: 6px; /* Rounded corners */
+            font-size: 16px; /* Font size */
+            cursor: pointer; /* Pointer cursor on hover */
+            width: 100%; /* Full width button */
+            transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth animations */
+        }
+
+        /* Button hover effect */
+        .login-btn:hover {
+            transform: translateY(-2px); /* Slight upward movement on hover */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+        }
+
+        /* Loading spinner styling */
+        .loading {
+            display: none; /* Hidden by default */
+            color: #667eea; /* Purple color */
+            margin-top: 15px; /* Space above loading text */
+        }
+
+        /* Error message styling */
+        .error-message {
+            background-color: #f8d7da; /* Light red background */
+            color: #721c24; /* Dark red text */
+            padding: 12px; /* Padding around message */
+            border-radius: 6px; /* Rounded corners */
+            margin-top: 15px; /* Space above message */
+            display: none; /* Hidden by default */
+        }
+
+        /* Back link styling */
+        .back-link {
+            margin-top: 20px; /* Space above back link */
+        }
+
+        .back-link a {
+            color: #667eea; /* Purple color for link */
+            text-decoration: none; /* Remove underline */
+            font-size: 14px; /* Smaller font size */
+        }
+
+        .back-link a:hover {
+            text-decoration: underline; /* Add underline on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Admin login heading -->
+        <h2 class="login-heading">Admin Login</h2>
+        
+        <!-- Login form -->
+        <form id="login-form">
+            <!-- Username input group -->
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <!-- Password input group -->
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <!-- Submit button -->
+            <button type="submit" class="login-btn">Login</button>
+            
+            <!-- Loading indicator -->
+            <div id="loading" class="loading">Logging in...</div>
+            
+            <!-- Error message container -->
+            <div id="error-message" class="error-message"></div>
+        </form>
+        
+        <!-- Back to main page link -->
+        <div class="back-link">
+            <a href="/">← Back to Main Page</a>
+        </div>
+    </div>
+
+    <!-- JavaScript for login functionality -->
+    <script>
+        // Add event listener for form submission
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            
+            // Get form elements
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error-message');
+            const submitBtn = document.querySelector('.login-btn');
+            
+            // Show loading state and hide error message
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = true; // Disable submit button during login
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const loginData = Object.fromEntries(formData.entries()); // Convert FormData to object
+            
+            // Send login request to server
+            fetch('/admin/login', {
+                method: 'POST', // Use POST method for login
+                headers: {
+                    'Content-Type': 'application/json', // Set content type to JSON
+                },
+                body: JSON.stringify(loginData) // Convert login data to JSON string
+            })
+            .then(response => {
+                if (!response.ok) { // Check if response is not successful
+                    return response.json().then(err => Promise.reject(err)); // Parse error and reject
+                }
+                return response.json(); // Parse successful response
+            })
+            .then(data => {
+                if (data.success) { // Check if login was successful
+                    // Redirect to admin dashboard on successful login
+                    window.location.href = '/admin/dashboard';
+                }
+            })
+            .catch(error => {
+                // Handle login errors
+                console.error('Login error:', error); // Log error to console
+                
+                // Show error message to user
+                errorDiv.textContent = error.error || 'Login failed. Please try again.';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // Reset UI state regardless of success or failure
+                loadingDiv.style.display = 'none'; // Hide loading indicator
+                submitBtn.disabled = false; // Re-enable submit button
+            });
+        });
+    </script>
+</body>
+</html>
