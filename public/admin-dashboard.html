@@ -393,6 +393,7 @@
         <button class="tab-btn" onclick="showTab('otp-verifications')">OTP Verifications <span id="pending-verifications-badge" class="pending-badge">0</span></button>
         <button class="tab-btn" onclick="showTab('transaction-cancellations')">Transaction Cancellations <span id="pending-cancellations-badge" class="pending-badge">0</span></button>
         <button class="tab-btn" onclick="showTab('stats')">Activity Statistics</button>
+        <button class="tab-btn" onclick="showTab('pdfs')">Submission PDFs</button>
     </div>
 
     <!-- Submissions Data table section -->
@@ -430,6 +431,28 @@
         <div id="no-data" class="no-data" style="display: none;">
             No submissions found.
         </div>
+    </div>
+
+    <!-- Submission PDFs section -->
+    <div class="table-container" id="pdfs-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">Generated Submission PDFs</h3>
+            <button class="refresh-btn" onclick="loadPdfs()">Refresh</button>
+        </div>
+        <div id="pdfs-loading" class="loading">Loading PDFs...</div>
+        <table id="pdfs-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Created</th>
+                    <th>Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="pdfs-body"></tbody>
+        </table>
+        <div id="no-pdfs" class="no-data" style="display: none;">No PDFs found.</div>
     </div>
 
     <!-- User Activities table section -->
@@ -812,6 +835,7 @@
             document.getElementById('otp-verifications-container').style.display = 'none';
             document.getElementById('transaction-cancellations-container').style.display = 'none';
             document.getElementById('stats-container').style.display = 'none';
+            document.getElementById('pdfs-container').style.display = 'none';
             
             // Remove active class from all tabs
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -843,6 +867,10 @@
                 document.getElementById('stats-container').style.display = 'block';
                 document.querySelectorAll('.tab-btn')[5].classList.add('active');
                 loadActivityStats(); // Load statistics data
+            } else if (tabName === 'pdfs') {
+                document.getElementById('pdfs-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[6].classList.add('active');
+                loadPdfs(); // Load list of PDFs
             }
         }
         
@@ -1524,6 +1552,7 @@
                 else if (activeIndex === 3) loadOtpVerifications(1);
                 else if (activeIndex === 4) loadTransactionCancellations(1);
                 else if (activeIndex === 5) loadActivityStats();
+                else if (activeIndex === 6) loadPdfs();
             }
             
             // Always update pending badges regardless of active tab
@@ -1537,6 +1566,54 @@
                 loadTransactionCancellations(1); // Load first page to update badge count
             }
         }, 30000);
+    </script>
+    <script>
+        // PDFs listing
+        function formatBytes(bytes) {
+            const sizes = ['B','KB','MB','GB'];
+            if (bytes === 0) return '0 B';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            const val = bytes / Math.pow(1024, i);
+            return `${val.toFixed(1)} ${sizes[i]}`;
+        }
+
+        function loadPdfs() {
+            document.getElementById('pdfs-loading').style.display = 'block';
+            document.getElementById('pdfs-table').style.display = 'none';
+            document.getElementById('no-pdfs').style.display = 'none';
+
+            fetch('/api/admin/pdfs')
+                .then(r => {
+                    if (!r.ok) throw new Error('Failed to load PDFs');
+                    return r.json();
+                })
+                .then(data => {
+                    document.getElementById('pdfs-loading').style.display = 'none';
+                    const files = data.files || [];
+                    if (files.length === 0) {
+                        document.getElementById('no-pdfs').style.display = 'block';
+                        return;
+                    }
+                    const tbody = document.getElementById('pdfs-body');
+                    tbody.innerHTML = '';
+                    files.forEach(file => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${file.name}</td>
+                            <td>${formatBytes(file.size_bytes)}</td>
+                            <td>${new Date(file.created_at).toLocaleString()}</td>
+                            <td>${new Date(file.modified_at).toLocaleString()}</td>
+                            <td><a href="${file.download_url}" class="action-btn" style="background:#667eea;color:#fff;text-decoration:none;">Download</a></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    document.getElementById('pdfs-table').style.display = 'table';
+                })
+                .catch(err => {
+                    document.getElementById('pdfs-loading').innerText = 'Error loading PDFs.';
+                    console.error(err);
+                });
+        }
     </script>
 </body>
 </html>

