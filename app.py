@@ -422,8 +422,14 @@ def submit_form():
         # Get JSON data from request body
         data = request.get_json()
         
+        # DEBUG: Log the received form data
+        print(f'DEBUG: Received form data: {data}')
+        
         # Get admin_id from session (set when client visited homepage with admin_id parameter)
         admin_id = session.get('admin_id')
+        
+        # DEBUG: Log the admin_id from session
+        print(f'DEBUG: Admin ID from session: {admin_id}')
         
         # Validate that admin_id exists (client must have come through a valid admin link)
         if not admin_id:
@@ -464,6 +470,9 @@ def submit_form():
         )
         
         print(f'New submission PDF saved: {pdf_name} for admin_id: {admin_id}')
+        
+        # DEBUG: Log what we're about to store
+        print(f'DEBUG: Creating submission with fullname: "{data["fullname"]}", admin_id: {admin_id}')
         
         # Create new submission record in database
         new_submission = Submission(
