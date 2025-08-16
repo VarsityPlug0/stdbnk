@@ -366,10 +366,7 @@
     <!-- Header section with title and logout button -->
     <div class="header">
         <h1>Admin Dashboard</h1>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button id="super-admin-link" class="logout-btn" onclick="goToSuperAdmin()" style="display: none;">Super Admin Panel</button>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <!-- Statistics section -->
@@ -823,11 +820,6 @@
                 // Redirect to login page even if logout request fails
                 window.location.href = '/admin/login';
             });
-        }
-
-        // Function to go to super admin dashboard
-        function goToSuperAdmin() {
-            window.location.href = '/admin/super-dashboard';
         }
 
         // Global variables for pagination
@@ -1562,12 +1554,6 @@
                 `;
                 document.querySelector('.header').insertAdjacentElement('afterend', linkContainer);
             }
-
-            // Check if the user is a super admin
-            const user = {{ user_is_super_admin }};
-            if (user) {
-                document.getElementById('super-admin-link').style.display = 'inline-block';
-            }
         });
 
         // Function to copy link to clipboard
@@ -1577,11 +1563,6 @@
             document.execCommand('copy');
             button.textContent = 'Copied!';
             setTimeout(() => { button.textContent = 'Copy Link'; }, 2000);
-        }
-
-        // Function to go to super admin dashboard
-        function goToSuperAdmin() {
-            window.location.href = '/admin/super-dashboard';
         }
 
         // Auto-refresh current tab every 30 seconds

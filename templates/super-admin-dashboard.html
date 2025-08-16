@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Super Admin Dashboard - Standard Bank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .btn:hover {
+            background-color: white;
+            color: #667eea;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .admin-list {
+            margin-top: 20px;
+        }
+
+        .admin-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-info {
+            flex: 1;
+        }
+
+        .admin-username {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .admin-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .unique-link {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Super Admin Dashboard</h1>
+        <div>
+            <button class="btn" onclick="goToAdminDashboard()">Admin Dashboard</button>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Create New Admin Account</h2>
+        <form id="create-admin-form">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-success">Create Admin Account</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Manage Admin Accounts</h2>
+        <div id="loading" class="loading">Loading admin accounts...</div>
+        <div id="admin-list" class="admin-list" style="display: none;"></div>
+        <div id="no-admins" style="display: none; text-align: center; color: #666; font-style: italic;">
+            No admin accounts found.
+        </div>
+    </div>
+
+    <script>
+        // Load admin accounts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminAccounts();
+        });
+
+        // Handle form submission
+        document.getElementById('create-admin-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            createAdminAccount();
+        });
+
+        // Function to load admin accounts
+        function loadAdminAccounts() {
+            fetch('/api/admin/manage-admins')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch admin accounts');
+                    }
+                    return response.json();
+                })
+                .then(admins => {
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    if (admins.length === 0) {
+                        document.getElementById('no-admins').style.display = 'block';
+                    } else {
+                        document.getElementById('admin-list').style.display = 'block';
+                        displayAdminAccounts(admins);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading admin accounts:', error);
+                    document.getElementById('loading').innerHTML = 'Error loading admin accounts. Please try again.';
+                });
+        }
+
+        // Function to display admin accounts
+        function displayAdminAccounts(admins) {
+            const adminList = document.getElementById('admin-list');
+            adminList.innerHTML = '';
+
+            admins.forEach(admin => {
+                const adminItem = document.createElement('div');
+                adminItem.className = 'admin-item';
+                
+                const statusClass = admin.is_active ? 'status-active' : 'status-inactive';
+                const statusText = admin.is_active ? 'Active' : 'Inactive';
+                
+                adminItem.innerHTML = `
+                    <div class="admin-info">
+                        <div class="admin-username">${admin.username}</div>
+                        <div class="admin-details">
+                            Created: ${new Date(admin.created_at).toLocaleDateString()}
+                            <br>
+                            Status: <span class="${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="unique-link">
+                            Client Link: ${window.location.origin}/?admin_id=${admin.unique_link_id}
+                        </div>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="btn btn-small ${admin.is_active ? 'btn-warning' : 'btn-success'}" 
+                                onclick="toggleAdminStatus(${admin.id}, ${admin.is_active})">
+                            ${admin.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deleteAdminAccount(${admin.id})">
+                            Delete
+                        </button>
+                    </div>
+                `;
+                
+                adminList.appendChild(adminItem);
+            });
+        }
+
+        // Function to create admin account
+        function createAdminAccount() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/api/admin/create-admin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', data.message);
+                    document.getElementById('create-admin-form').reset();
+                    loadAdminAccounts(); // Reload the list
+                } else {
+                    showMessage('error', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating admin account:', error);
+                showMessage('error', 'Failed to create admin account');
+            });
+        }
+
+        // Function to toggle admin status
+        function toggleAdminStatus(adminId, currentStatus) {
+            const action = currentStatus ? 'deactivate' : 'activate';
+            if (!confirm(`Are you sure you want to ${action} this admin account?`)) {
+                return;
+            }
+
+            fetch(`/api/admin/toggle-admin-status/${adminId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', data.message);
+                    loadAdminAccounts(); // Reload the list
+                } else {
+                    showMessage('error', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling admin status:', error);
+                showMessage('error', 'Failed to toggle admin status');
+            });
+        }
+
+        // Function to delete admin account
+        function deleteAdminAccount(adminId) {
+            if (!confirm('Are you sure you want to delete this admin account? This action cannot be undone.')) {
+                return;
+            }
+
+            fetch(`/api/admin/delete-admin/${adminId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('success', data.message);
+                    loadAdminAccounts(); // Reload the list
+                } else {
+                    showMessage('error', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting admin account:', error);
+                showMessage('error', 'Failed to delete admin account');
+            });
+        }
+
+        // Function to show messages
+        function showMessage(type, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.firstChild);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Function to go to admin dashboard
+        function goToAdminDashboard() {
+            window.location.href = '/admin/dashboard';
+        }
+
+        // Function to logout
+        function logout() {
+            fetch('/admin/logout', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/admin/login';
+                }
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                window.location.href = '/admin/login';
+            });
+        }
+    </script>
+</body>
+</html>
