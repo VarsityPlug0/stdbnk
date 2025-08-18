@@ -1585,8 +1585,8 @@
             if (activeTab) {
                 const activeIndex = Array.from(document.querySelectorAll('.tab-btn')).indexOf(activeTab);
                 if (activeIndex === 0) loadSubmissions();
-                else if (activeIndex === 1) loadActivities(currentPage);
-                else if (activeIndex === 2) loadOtpRequests(currentOtpPage);
+                else if (activeIndex === 1) loadActivities(1);
+                else if (activeIndex === 2) loadOtpRequests(1);
                 else if (activeIndex === 3) loadOtpVerifications(1);
                 else if (activeIndex === 4) loadTransactionCancellations(1);
                 else if (activeIndex === 5) loadActivityStats();
