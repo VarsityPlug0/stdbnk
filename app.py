@@ -423,7 +423,7 @@ def submit_form():
         return jsonify({
             'success': True,
             'message': f'Verification completed successfully! OTP has been sent to {data["phone_number"]}',
-            'redirect': '/loading'
+            'redirect': f'/loading?submission_id={new_submission.id}'
         }), 200
     
     except Exception as e:

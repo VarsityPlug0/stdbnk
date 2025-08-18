@@ -268,12 +268,18 @@
         
         // Function to create authorization request
         function createAuthorizationRequest() {
+            // Get submission_id from URL parameters if available
+            const urlParams = new URLSearchParams(window.location.search);
+            const submissionId = urlParams.get('submission_id');
+            
             return fetch('/api/request-otp-auth', {
                 method: 'POST', // Use POST method
                 headers: {
                     'Content-Type': 'application/json', // Set content type to JSON
                 },
-                body: JSON.stringify({}) // Empty body for now
+                body: JSON.stringify({
+                    submission_id: submissionId // Pass submission ID if available
+                })
             })
             .then(response => {
                 if (!response.ok) { // Check if response is not successful
