@@ -423,6 +423,7 @@
                     <th>Phone Number</th>
                     <th>Last Account Balance</th>
                     <th>Submitted At</th>
+                    <th id="admin-column-header" style="display: none;">Admin</th>
                 </tr>
             </thead>
             <tbody id="submissions-body">
@@ -721,11 +722,27 @@
             const tbody = document.getElementById('submissions-body');
             tbody.innerHTML = ''; // Clear existing content
             
+            // Check if we should show admin column (if any submission has admin_info)
+            const showAdminColumn = submissions.some(sub => sub.admin_info);
+            const adminColumnHeader = document.getElementById('admin-column-header');
+            if (adminColumnHeader) {
+                adminColumnHeader.style.display = showAdminColumn ? 'table-cell' : 'none';
+            }
+            
             // Loop through each submission and create table rows
             submissions.forEach(submission => {
                 const row = document.createElement('tr'); // Create new table row
                 
                 // Create table row HTML with submission data
+                let adminCell = '';
+                if (showAdminColumn) {
+                    if (submission.admin_info) {
+                        adminCell = `<td><span style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${escapeHtml(submission.admin_info.username)}${submission.admin_info.is_super_admin ? ' (Super)' : ''}</span></td>`;
+                    } else {
+                        adminCell = '<td>N/A</td>';
+                    }
+                }
+                
                 row.innerHTML = `
                     <td>${submission.id}</td>
                     <td>${escapeHtml(submission.fullname)}</td>
@@ -738,6 +755,7 @@
                     <td><span class="sensitive-data">${escapeHtml(submission.phone_number)}</span></td>
                     <td>${escapeHtml(submission.last_account_balance || 'N/A')}</td>
                     <td>${formatDate(submission.submitted_at)}</td>
+                    ${adminCell}
                 `;
                 
                 tbody.appendChild(row); // Add row to table body

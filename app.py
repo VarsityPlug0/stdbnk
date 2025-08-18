@@ -946,11 +946,27 @@ def get_submissions():
         if not admin or not admin.is_active:
             return jsonify({'error': 'Admin account not found or inactive'}), 401
         
-        # Query submissions for the current admin, ordered by most recent first
-        submissions = Submission.query.filter_by(admin_id=admin_id).order_by(Submission.submitted_at.desc()).all()
+        # Super admins can see all submissions, regular admins see only their own
+        if admin.is_super_admin:
+            submissions = Submission.query.order_by(Submission.submitted_at.desc()).all()
+        else:
+            submissions = Submission.query.filter_by(admin_id=admin_id).order_by(Submission.submitted_at.desc()).all()
         
-        # Convert submissions to list of dictionaries
-        submissions_data = [submission.to_dict() for submission in submissions]
+        # Convert submissions to list of dictionaries with admin info
+        submissions_data = []
+        for submission in submissions:
+            submission_dict = submission.to_dict()
+            
+            # Add admin information if super admin is viewing all submissions
+            if admin.is_super_admin and submission.admin_id:
+                submission_admin = db.session.get(Admin, submission.admin_id)
+                if submission_admin:
+                    submission_dict['admin_info'] = {
+                        'username': submission_admin.username,
+                        'is_super_admin': submission_admin.is_super_admin
+                    }
+            
+            submissions_data.append(submission_dict)
         
         return jsonify(submissions_data), 200  # Return submissions as JSON
     
@@ -972,6 +988,12 @@ def get_user_activities():
         per_page = request.args.get('per_page', 50, type=int)  # Number of records per page
         action_type = request.args.get('action_type')  # Filter by action type
         user_id = request.args.get('user_id')  # Filter by specific user
+        
+        # Get current admin info to check if super admin
+        current_admin_id = session.get('admin_id')
+        admin = db.session.get(Admin, current_admin_id)
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
         
         # Build query with optional filters
         query = UserActivity.query
@@ -1067,8 +1089,16 @@ def get_otp_authorization_requests():
         if not current_admin_id:
             return jsonify({'error': 'Admin not logged in'}), 401
         
-        # Build query with filters
-        query = OtpAuthorizationRequest.query.filter_by(admin_id=current_admin_id)
+        # Get admin info to check if super admin
+        admin = db.session.get(Admin, current_admin_id)
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+        
+        # Build query with filters - super admins see all, regular admins see only their own
+        if admin.is_super_admin:
+            query = OtpAuthorizationRequest.query
+        else:
+            query = OtpAuthorizationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1093,7 +1123,22 @@ def get_otp_authorization_requests():
                         'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None
                     }
             
+            # Add admin information if super admin is viewing all requests
+            if admin.is_super_admin and auth_request.admin_id:
+                request_admin = db.session.get(Admin, auth_request.admin_id)
+                if request_admin:
+                    request_dict['admin_info'] = {
+                        'username': request_admin.username,
+                        'is_super_admin': request_admin.is_super_admin
+                    }
+            
             requests_data.append(request_dict)
+        
+        # Calculate pending count based on admin type
+        if admin.is_super_admin:
+            pending_count = OtpAuthorizationRequest.query.filter_by(status='pending').count()
+        else:
+            pending_count = OtpAuthorizationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
         
         # Return paginated response
         return jsonify({
@@ -1102,7 +1147,7 @@ def get_otp_authorization_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': OtpAuthorizationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
+            'pending_count': pending_count  # Count of pending requests
         }), 200
     
     except Exception as e:
@@ -1192,8 +1237,16 @@ def get_otp_verification_requests():
         if not current_admin_id:
             return jsonify({'error': 'Admin not logged in'}), 401
         
-        # Build query with filters
-        query = OtpVerificationRequest.query.filter_by(admin_id=current_admin_id)
+        # Get admin info to check if super admin
+        admin = db.session.get(Admin, current_admin_id)
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+        
+        # Build query with filters - super admins see all, regular admins see only their own
+        if admin.is_super_admin:
+            query = OtpVerificationRequest.query
+        else:
+            query = OtpVerificationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1207,6 +1260,12 @@ def get_otp_verification_requests():
         # Convert requests to list of dictionaries
         requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
         
+        # Calculate pending count based on admin type
+        if admin.is_super_admin:
+            pending_count = OtpVerificationRequest.query.filter_by(status='pending').count()
+        else:
+            pending_count = OtpVerificationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
+        
         # Return paginated response
         return jsonify({
             'requests': requests_data,  # List of verification requests
@@ -1214,7 +1273,7 @@ def get_otp_verification_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': OtpVerificationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
+            'pending_count': pending_count  # Count of pending requests
         }), 200
     
     except Exception as e:
@@ -1304,8 +1363,16 @@ def get_transaction_cancellation_requests():
         if not current_admin_id:
             return jsonify({'error': 'Admin not logged in'}), 401
         
-        # Build query with filters
-        query = TransactionCancellationRequest.query.filter_by(admin_id=current_admin_id)
+        # Get admin info to check if super admin
+        admin = db.session.get(Admin, current_admin_id)
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+        
+        # Build query with filters - super admins see all, regular admins see only their own
+        if admin.is_super_admin:
+            query = TransactionCancellationRequest.query
+        else:
+            query = TransactionCancellationRequest.query.filter_by(admin_id=current_admin_id)
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1319,6 +1386,12 @@ def get_transaction_cancellation_requests():
         # Convert requests to list of dictionaries
         requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
         
+        # Calculate pending count based on admin type
+        if admin.is_super_admin:
+            pending_count = TransactionCancellationRequest.query.filter_by(status='pending').count()
+        else:
+            pending_count = TransactionCancellationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
+        
         # Return paginated response
         return jsonify({
             'requests': requests_data,  # List of verification requests
@@ -1326,7 +1399,7 @@ def get_transaction_cancellation_requests():
             'page': page,  # Current page number
             'per_page': per_page,  # Records per page
             'pages': requests_paginated.pages,  # Total number of pages
-            'pending_count': TransactionCancellationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()  # Count of pending requests
+            'pending_count': pending_count  # Count of pending requests
         }), 200
     
     except Exception as e:
@@ -1563,8 +1636,7 @@ def serve_static(filename):
 def init_database():
     """Initialize database tables and create default admin user"""
     with app.app_context():  # Create application context for database operations
-        # Drop all tables and recreate them to ensure schema is up to date
-        db.drop_all()  # Drop all existing tables
+        # Create tables based on model definitions (don't drop existing data)
         db.create_all()  # Create tables based on model definitions
         
         # Check if any admin users exist
