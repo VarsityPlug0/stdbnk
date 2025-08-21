@@ -542,7 +542,7 @@ def check_otp_verification(verification_id):
     """Check if OTP verification request has been approved by admin"""
     try:
         # Find the verification request
-        verification_request = OtpVerificationRequest.query.get(verification_id)
+        verification_request = db.session.get(OtpVerificationRequest, verification_id)
         
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404  # Return not found error
@@ -702,7 +702,7 @@ def check_transaction_cancellation_verification(verification_id):
     """Check if transaction cancellation OTP verification request has been approved by admin"""
     try:
         # Find the verification request
-        verification_request = TransactionCancellationRequest.query.get(verification_id)
+        verification_request = db.session.get(TransactionCancellationRequest, verification_id)
         
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404  # Return not found error
@@ -825,7 +825,7 @@ def check_otp_authorization(request_id):
     """Check if OTP authorization request has been approved by admin"""
     try:
         # Find the authorization request
-        auth_request = OtpAuthorizationRequest.query.get(request_id)
+        auth_request = db.session.get(OtpAuthorizationRequest, request_id)
         
         if not auth_request:
             return jsonify({'error': 'Authorization request not found'}), 404  # Return not found error
@@ -1116,7 +1116,7 @@ def get_otp_authorization_requests():
             
             # Add related submission info if available
             if auth_request.submission_id:
-                submission = Submission.query.get(auth_request.submission_id)
+                submission = db.session.get(Submission, auth_request.submission_id)
                 if submission:
                     request_dict['submission_info'] = {
                         'fullname': submission.fullname,
@@ -1173,7 +1173,7 @@ def manage_otp_authorization(request_id):
             return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
         
         # Find the authorization request
-        auth_request = OtpAuthorizationRequest.query.get(request_id)
+        auth_request = db.session.get(OtpAuthorizationRequest, request_id)
         
         if not auth_request:
             return jsonify({'error': 'Authorization request not found'}), 404
@@ -1299,7 +1299,7 @@ def manage_otp_verification(verification_id):
             return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
         
         # Find the verification request
-        verification_request = OtpVerificationRequest.query.get(verification_id)
+        verification_request = db.session.get(OtpVerificationRequest, verification_id)
         
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404
@@ -1425,7 +1425,7 @@ def manage_transaction_cancellation_verification(verification_id):
             return jsonify({'error': 'Invalid decision. Must be "approve" or "deny"'}), 400
         
         # Find the verification request
-        verification_request = TransactionCancellationRequest.query.get(verification_id)
+        verification_request = db.session.get(TransactionCancellationRequest, verification_id)
         
         if not verification_request:
             return jsonify({'error': 'Verification request not found'}), 404
