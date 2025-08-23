@@ -221,7 +221,7 @@ html_content = """<!DOCTYPE html>
                 <span>Website: www.standardbank.co.za</span>
                 <div class="logo-section">
                     <div class="logo">
-                        <img src="http://localhost:3000/logo-email.png" alt="Standard Bank Logo">
+                        <img src="https://standardbank.onrender.com/logo-email.png" alt="Standard Bank Logo">
                     </div>
                 </div>
             </div>

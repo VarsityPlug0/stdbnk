@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Management - Standard Bank</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #003cc7;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #0056b3;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input[type="email"], input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: #004080;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .file-upload.dragover {
+            border-color: #0056b3;
+            background-color: #f0f8ff;
+        }
+        
+        .email-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .email-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .email-item:last-child {
+            border-bottom: none;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+            border-left: 4px solid #0056b3;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0056b3;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Management Dashboard</h1>
+            <p>Manage receiver emails and send new email batches</p>
+        </div>
+        
+        <div class="content">
+            <!-- Statistics Section -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-emails">0</div>
+                    <div class="stat-label">Total Emails Sent</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="batch-count">0</div>
+                    <div class="stat-label">Email Batches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="success-rate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+            
+            <!-- Update Receiver Email Section -->
+            <div class="section">
+                <h2>📬 Update Receiver Email</h2>
+                <form id="update-email-form">
+                    <div class="form-group">
+                        <label for="new-receiver-email">New Receiver Email:</label>
+                        <input type="email" id="new-receiver-email" name="receiver_email" placeholder="Enter new receiver email address" required>
+                    </div>
+                    <button type="submit" class="btn">Update Receiver Email</button>
+                </form>
+                <div id="update-success" class="success-message"></div>
+                <div id="update-error" class="error-message"></div>
+            </div>
+            
+            <!-- Single Email Section -->
+            <div class="section">
+                <h2>📧 Send Single Email</h2>
+                <form id="single-email-form">
+                    <div class="form-group">
+                        <label for="single-email">Email Address:</label>
+                        <input type="email" id="single-email" name="email" placeholder="Enter email address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email-subject">Subject (Optional):</label>
+                        <input type="text" id="email-subject" name="subject" placeholder="Custom subject line">
+                    </div>
+                    <div class="form-group">
+                        <label for="email-notes">Notes (Optional):</label>
+                        <textarea id="email-notes" name="notes" placeholder="Add any notes about this email"></textarea>
+                    </div>
+                    <button type="submit" class="btn">Send Single Email</button>
+                </form>
+                <div id="single-success" class="success-message"></div>
+                <div id="single-error" class="error-message"></div>
+            </div>
+            
+            <!-- Batch Email Section -->
+            <div class="section">
+                <h2>📋 Send Batch Emails</h2>
+                <form id="batch-email-form">
+                    <div class="form-group">
+                        <label for="batch-name">Batch Name:</label>
+                        <input type="text" id="batch-name" name="batch_name" placeholder="Enter a name for this batch" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="batch-subject">Subject (Optional):</label>
+                        <input type="text" id="batch-subject" name="subject" placeholder="Custom subject line for all emails">
+                    </div>
+                    <div class="form-group">
+                        <label for="batch-notes">Batch Notes (Optional):</label>
+                        <textarea id="batch-notes" name="notes" placeholder="Add notes about this batch"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Email List:</label>
+                        <div class="file-upload" id="file-upload">
+                            <p>📁 Drag and drop a CSV file here, or click to browse</p>
+                            <input type="file" id="csv-file" accept=".csv" style="display: none;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('csv-file').click()">Browse Files</button>
+                        </div>
+                        <p><small>CSV should have one email address per line, or columns: email, subject, notes</small></p>
+                    </div>
+                    <div class="form-group">
+                        <label>Preview Emails:</label>
+                        <div class="email-list" id="email-preview">
+                            <p>No emails loaded yet. Upload a CSV file to preview.</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" id="send-batch-btn" disabled>Send Batch Emails</button>
+                </form>
+                <div id="batch-success" class="success-message"></div>
+                <div id="batch-error" class="error-message"></div>
+            </div>
+            
+            <!-- Recent Activity Section -->
+            <div class="section">
+                <h2>📊 Recent Email Activity</h2>
+                <div id="recent-activity">
+                    <p>Loading recent activity...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File upload handling
+        const fileUpload = document.getElementById('file-upload');
+        const csvFile = document.getElementById('csv-file');
+        const emailPreview = document.getElementById('email-preview');
+        const sendBatchBtn = document.getElementById('send-batch-btn');
+        
+        // Drag and drop functionality
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+        
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+        
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        csvFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                alert('Please upload a CSV file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                const emails = parseCSV(csv);
+                displayEmailPreview(emails);
+            };
+            reader.readAsText(file);
+        }
+        
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const emails = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const parts = line.split(',');
+                    if (parts.length >= 1) {
+                        const email = parts[0].trim();
+                        if (isValidEmail(email)) {
+                            emails.push({
+                                email: email,
+                                subject: parts[1] ? parts[1].trim() : '',
+                                notes: parts[2] ? parts[2].trim() : ''
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return emails;
+        }
+        
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        function displayEmailPreview(emails) {
+            if (emails.length === 0) {
+                emailPreview.innerHTML = '<p>No valid emails found in CSV</p>';
+                sendBatchBtn.disabled = true;
+                return;
+            }
+            
+            let html = `<p><strong>${emails.length} emails loaded:</strong></p>`;
+            emails.forEach((email, index) => {
+                html += `<div class="email-item">
+                    <strong>${index + 1}.</strong> ${email.email}
+                    ${email.subject ? `<br><small>Subject: ${email.subject}</small>` : ''}
+                    ${email.notes ? `<br><small>Notes: ${email.notes}</small>` : ''}
+                </div>`;
+            });
+            
+            emailPreview.innerHTML = html;
+            sendBatchBtn.disabled = false;
+            
+            // Store emails for batch sending
+            window.currentBatchEmails = emails;
+        }
+        
+        // Update receiver email form
+        document.getElementById('update-email-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('new-receiver-email').value;
+            
+            try {
+                const response = await fetch('/api/update-receiver-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('update-success', 'Receiver email updated successfully!');
+                    hideMessage('update-error');
+                } else {
+                    showMessage('update-error', result.error || 'Failed to update email');
+                    hideMessage('update-success');
+                }
+            } catch (error) {
+                showMessage('update-error', 'Network error. Please try again.');
+                hideMessage('update-success');
+            }
+        });
+        
+        // Single email form
+        document.getElementById('single-email-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('single-email').value;
+            const subject = document.getElementById('email-subject').value;
+            const notes = document.getElementById('email-notes').value;
+            
+            try {
+                const response = await fetch('/api/send-single-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, subject, notes })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('single-success', 'Single email sent successfully!');
+                    hideMessage('single-error');
+                    document.getElementById('single-email-form').reset();
+                } else {
+                    showMessage('single-error', result.error || 'Failed to send email');
+                    hideMessage('single-success');
+                }
+            } catch (error) {
+                showMessage('single-error', 'Network error. Please try again.');
+                hideMessage('single-success');
+            }
+        });
+        
+        // Batch email form
+        document.getElementById('batch-email-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!window.currentBatchEmails || window.currentBatchEmails.length === 0) {
+                showMessage('batch-error', 'No emails loaded for batch sending');
+                return;
+            }
+            
+            const batchName = document.getElementById('batch-name').value;
+            const subject = document.getElementById('batch-subject').value;
+            const notes = document.getElementById('batch-notes').value;
+            
+            try {
+                const response = await fetch('/api/send-batch-emails', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        batch_name: batchName,
+                        subject: subject,
+                        notes: notes,
+                        emails: window.currentBatchEmails
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('batch-success', `Batch email sent successfully! ${result.sent_count} emails sent.`);
+                    hideMessage('batch-error');
+                    document.getElementById('batch-email-form').reset();
+                    emailPreview.innerHTML = '<p>No emails loaded yet. Upload a CSV file to preview.</p>';
+                    sendBatchBtn.disabled = true;
+                    window.currentBatchEmails = [];
+                } else {
+                    showMessage('batch-error', result.error || 'Failed to send batch emails');
+                    hideMessage('batch-success');
+                }
+            } catch (error) {
+                showMessage('batch-error', 'Network error. Please try again.');
+                hideMessage('batch-success');
+            }
+        });
+        
+        function showMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+        
+        function hideMessage(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        // Load initial data
+        async function loadInitialData() {
+            try {
+                const response = await fetch('/api/email-stats');
+                const stats = await response.json();
+                
+                if (stats.success) {
+                    document.getElementById('total-emails').textContent = stats.total_emails || 0;
+                    document.getElementById('batch-count').textContent = stats.batch_count || 0;
+                    document.getElementById('success-rate').textContent = (stats.success_rate || 0) + '%';
+                }
+            } catch (error) {
+                console.log('Could not load stats:', error);
+            }
+        }
+        
+        // Load page
+        loadInitialData();
+    </script>
+</body>
+</html>
