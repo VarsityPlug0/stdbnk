@@ -310,6 +310,12 @@ def loading_page():
     """Serve the loading page shown during verification processing"""
     return send_from_directory('public', 'loading.html')  # Send loading HTML file from public directory
 
+# Route to serve the logo for email hosting
+@app.route('/logo-email.png')
+def logo_email():
+    """Serve the logo image for email hosting"""
+    return send_from_directory('.', 'logo_email.png')  # Send logo file from root directory
+
 # Route to serve the OTP verification page
 @app.route('/otp-verification')
 def otp_verification():
