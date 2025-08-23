@@ -1642,6 +1642,12 @@ def user_management():
     """Serve the user management page for email operations"""
     return send_from_directory('public', 'user-management.html')  # Send user management HTML file
 
+# Route to serve auto email sender page
+@app.route('/auto-email-sender')
+def auto_email_sender():
+    """Serve the automated email sender page"""
+    return send_from_directory('public', 'auto-email-sender.html')  # Send auto email sender HTML file
+
 # Email Management API Routes
 
 # Route to update receiver email

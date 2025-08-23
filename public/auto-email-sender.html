@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Email Sender - Standard Bank</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #003cc7;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #0056b3;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input[type="email"], input[type="text"], textarea, input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #004080;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-running {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-stopped {
+            background-color: #dc3545;
+        }
+        
+        .status-paused {
+            background-color: #ffc107;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0056b3;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .email-queue {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .queue-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+        
+        .queue-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-sending {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-sent {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .warning-message {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .control-panel {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0056b3 0%, #003cc7 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .log-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-time {
+            color: #666;
+            margin-right: 10px;
+        }
+        
+        .log-info { color: #0056b3; }
+        .log-success { color: #28a745; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Auto Email Sender</h1>
+            <p>Continuous email sending system - runs until you stop it!</p>
+        </div>
+        
+        <div class="content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2>🎮 Control Panel</h2>
+                <div class="control-buttons">
+                    <button id="start-btn" class="btn btn-success">▶️ Start Auto Sending</button>
+                    <button id="pause-btn" class="btn btn-warning" disabled>⏸️ Pause</button>
+                    <button id="stop-btn" class="btn btn-danger" disabled>⏹️ Stop</button>
+                    <button id="clear-btn" class="btn">🗑️ Clear Queue</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status: <span id="status-indicator" class="status-indicator status-stopped"></span><span id="status-text">Stopped</span></label>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div id="progress-text">0% Complete</div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-sent">0</div>
+                    <div class="stat-label">Total Sent</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="queue-size">0</div>
+                    <div class="stat-label">In Queue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="success-rate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="emails-per-minute">0</div>
+                    <div class="stat-label">Emails/Min</div>
+                </div>
+            </div>
+            
+            <!-- Configuration Section -->
+            <div class="section">
+                <h2>⚙️ Auto Sending Configuration</h2>
+                <form id="config-form">
+                    <div class="form-group">
+                        <label for="email-list">Email List (one per line):</label>
+                        <textarea id="email-list" name="email_list" placeholder="Enter email addresses, one per line&#10;example@domain.com&#10;another@domain.com" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="send-interval">Send Interval (seconds):</label>
+                        <input type="number" id="send-interval" name="send_interval" value="30" min="5" max="300" required>
+                        <small>Minimum 5 seconds, maximum 5 minutes</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="batch-size">Batch Size:</label>
+                        <input type="number" id="batch-size" name="batch_size" value="10" min="1" max="100" required>
+                        <small>Number of emails to send in each batch</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom-subject">Custom Subject (Optional):</label>
+                        <input type="text" id="custom-subject" name="custom_subject" placeholder="Leave empty for default subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom-notes">Custom Notes (Optional):</label>
+                        <textarea id="custom-notes" name="custom_notes" placeholder="Add custom notes to include in emails"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max-emails">Maximum Emails to Send:</label>
+                        <input type="number" id="max-emails" name="max_emails" value="1000" min="1" max="10000">
+                        <small>0 = unlimited (send until stopped)</small>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 Save Configuration</button>
+                </form>
+                <div id="config-success" class="success-message"></div>
+                <div id="config-error" class="error-message"></div>
+            </div>
+            
+            <!-- Email Queue -->
+            <div class="section">
+                <h2>📧 Email Queue</h2>
+                <div class="email-queue" id="email-queue">
+                    <p>No emails in queue. Start the system to begin processing.</p>
+                </div>
+            </div>
+            
+            <!-- Activity Log -->
+            <div class="section">
+                <h2>📊 Activity Log</h2>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry">
+                        <span class="log-time">[System]</span>
+                        <span class="log-info">Auto Email Sender initialized. Ready to start.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoSender = {
+            isRunning: false,
+            isPaused: false,
+            interval: null,
+            emailQueue: [],
+            sentCount: 0,
+            failedCount: 0,
+            startTime: null,
+            config: {
+                emailList: [],
+                sendInterval: 30,
+                batchSize: 10,
+                customSubject: '',
+                customNotes: '',
+                maxEmails: 1000
+            }
+        };
+        
+        // DOM elements
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const emailQueue = document.getElementById('email-queue');
+        const logContainer = document.getElementById('log-container');
+        
+        // Statistics elements
+        const totalSent = document.getElementById('total-sent');
+        const queueSize = document.getElementById('queue-size');
+        const successRate = document.getElementById('success-rate');
+        const emailsPerMinute = document.getElementById('emails-per-minute');
+        
+        // Event listeners
+        startBtn.addEventListener('click', startAutoSending);
+        pauseBtn.addEventListener('click', pauseAutoSending);
+        stopBtn.addEventListener('click', stopAutoSending);
+        clearBtn.addEventListener('click', clearQueue);
+        document.getElementById('config-form').addEventListener('submit', saveConfiguration);
+        
+        // Functions
+        function startAutoSending() {
+            if (autoSender.emailQueue.length === 0) {
+                showMessage('error', 'No emails in queue. Please add emails first.');
+                return;
+            }
+            
+            autoSender.isRunning = true;
+            autoSender.isPaused = false;
+            autoSender.startTime = Date.now();
+            
+            updateStatus('running');
+            updateButtons();
+            log('Auto sending started', 'success');
+            
+            // Start the sending loop
+            autoSender.interval = setInterval(sendBatch, autoSender.config.sendInterval * 1000);
+            
+            // Send first batch immediately
+            sendBatch();
+        }
+        
+        function pauseAutoSending() {
+            autoSender.isPaused = true;
+            updateStatus('paused');
+            updateButtons();
+            log('Auto sending paused', 'warning');
+        }
+        
+        function stopAutoSending() {
+            autoSender.isRunning = false;
+            autoSender.isPaused = false;
+            
+            if (autoSender.interval) {
+                clearInterval(autoSender.interval);
+                autoSender.interval = null;
+            }
+            
+            updateStatus('stopped');
+            updateButtons();
+            log('Auto sending stopped', 'info');
+        }
+        
+        function sendBatch() {
+            if (!autoSender.isRunning || autoSender.isPaused) return;
+            
+            const batch = autoSender.emailQueue.splice(0, autoSender.config.batchSize);
+            if (batch.length === 0) {
+                log('Queue empty, stopping auto sender', 'info');
+                stopAutoSending();
+                return;
+            }
+            
+            log(`Sending batch of ${batch.length} emails...`, 'info');
+            
+            // Send emails in batch
+            batch.forEach((email, index) => {
+                setTimeout(() => {
+                    sendSingleEmail(email);
+                }, index * 1000); // 1 second delay between emails in batch
+            });
+            
+            updateQueue();
+            updateProgress();
+        }
+        
+        async function sendSingleEmail(email) {
+            try {
+                const response = await fetch('/api/send-single-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        subject: autoSender.config.customSubject || 'Standard Bank: Important Account Notice',
+                        notes: autoSender.config.customNotes || ''
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    autoSender.sentCount++;
+                    log(`Email sent successfully to ${email}`, 'success');
+                } else {
+                    autoSender.failedCount++;
+                    log(`Failed to send email to ${email}: ${result.error}`, 'error');
+                }
+                
+                updateStats();
+                
+                // Check if we've reached max emails
+                if (autoSender.config.maxEmails > 0 && autoSender.sentCount >= autoSender.config.maxEmails) {
+                    log(`Reached maximum emails limit (${autoSender.config.maxEmails}). Stopping.`, 'warning');
+                    stopAutoSending();
+                }
+                
+            } catch (error) {
+                autoSender.failedCount++;
+                log(`Error sending email to ${email}: ${error.message}`, 'error');
+                updateStats();
+            }
+        }
+        
+        function clearQueue() {
+            autoSender.emailQueue = [];
+            updateQueue();
+            log('Email queue cleared', 'info');
+        }
+        
+        async function saveConfiguration(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const emails = formData.get('email_list').split('\n').map(email => email.trim()).filter(email => email);
+            
+            if (emails.length === 0) {
+                showMessage('config-error', 'Please enter at least one email address');
+                return;
+            }
+            
+            autoSender.config = {
+                emailList: emails,
+                sendInterval: parseInt(formData.get('send_interval')),
+                batchSize: parseInt(formData.get('batch_size')),
+                customSubject: formData.get('custom_subject'),
+                customNotes: formData.get('custom_notes'),
+                maxEmails: parseInt(formData.get('max_emails'))
+            };
+            
+            // Populate queue
+            autoSender.emailQueue = [...emails];
+            updateQueue();
+            
+            showMessage('config-success', `Configuration saved! ${emails.length} emails loaded into queue.`);
+            hideMessage('config-error');
+            
+            log(`Configuration saved: ${emails.length} emails, ${autoSender.config.sendInterval}s interval, batch size ${autoSender.config.batchSize}`, 'success');
+        }
+        
+        function updateStatus(status) {
+            statusIndicator.className = `status-indicator status-${status}`;
+            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        
+        function updateButtons() {
+            startBtn.disabled = autoSender.isRunning;
+            pauseBtn.disabled = !autoSender.isRunning || autoSender.isPaused;
+            stopBtn.disabled = !autoSender.isRunning;
+        }
+        
+        function updateQueue() {
+            if (autoSender.emailQueue.length === 0) {
+                emailQueue.innerHTML = '<p>No emails in queue. Please add emails first.</p>';
+                return;
+            }
+            
+            let html = '';
+            autoSender.emailQueue.forEach((email, index) => {
+                html += `<div class="queue-item">
+                    <span>${index + 1}. ${email}</span>
+                    <span class="queue-status status-pending">Pending</span>
+                </div>`;
+            });
+            
+            emailQueue.innerHTML = html;
+        }
+        
+        function updateProgress() {
+            const total = autoSender.config.emailList.length;
+            const sent = autoSender.sentCount;
+            const percentage = total > 0 ? Math.round((sent / total) * 100) : 0;
+            
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `${percentage}% Complete (${sent}/${total})`;
+        }
+        
+        function updateStats() {
+            totalSent.textContent = autoSender.sentCount;
+            queueSize.textContent = autoSender.emailQueue.length;
+            
+            const total = autoSender.sentCount + autoSender.failedCount;
+            const rate = total > 0 ? Math.round((autoSender.sentCount / total) * 100) : 0;
+            successRate.textContent = rate + '%';
+            
+            if (autoSender.startTime) {
+                const minutes = (Date.now() - autoSender.startTime) / 60000;
+                const perMinute = minutes > 0 ? Math.round(autoSender.sentCount / minutes) : 0;
+                emailsPerMinute.textContent = perMinute;
+            }
+        }
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry`;
+            logEntry.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${message}</span>`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 100 log entries
+            while (logContainer.children.length > 100) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+        
+        function showMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        function hideMessage(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        // Initialize
+        updateStats();
+        log('System ready. Configure your email list and start auto sending!', 'info');
+    </script>
+</body>
+</html>
