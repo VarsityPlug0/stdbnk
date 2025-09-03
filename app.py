@@ -68,8 +68,6 @@ class Admin(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)  # Username, unique and required
     password_hash = db.Column(db.String(200), nullable=False)  # Hashed password, required
     unique_link_id = db.Column(db.String(36), unique=True, nullable=True) # Unique ID for homepage link
-    is_super_admin = db.Column(db.Boolean, default=False)  # Super admin flag
-    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)  # Who created this admin
     is_active = db.Column(db.Boolean, default=True)  # Whether admin account is active
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # When admin was created
 
@@ -79,7 +77,6 @@ class Admin(db.Model):
             'id': self.id,
             'username': self.username,
             'unique_link_id': self.unique_link_id,
-            'is_super_admin': self.is_super_admin,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
@@ -225,15 +222,7 @@ def require_auth():
         return False  # User is not authenticated
     return True  # User is authenticated
 
-# Helper function to check if user is a super admin
-def require_super_admin():
-    """Check if current session has super admin authentication"""
-    if not require_auth():  # First check if user is authenticated
-        return False
-    admin = db.session.get(Admin, session.get('admin_id'))
-    if not admin or not admin.is_super_admin:  # Check if user is super admin
-        return False
-    return True  # User is super admin
+
 
 # Helper function to get user identifier from session or IP
 def get_user_identifier():
@@ -921,19 +910,11 @@ def admin_dashboard():
     # Fetch the current admin's information
     admin = db.session.get(Admin, session.get('admin_id'))
     unique_link_id = admin.unique_link_id if admin else None
-    is_super_admin = admin.is_super_admin if admin else False
     
     # Render the dashboard template with the admin information
-    return render_template('admin-dashboard.html', unique_link_id=unique_link_id, user_is_super_admin=is_super_admin)
+    return render_template('admin-dashboard.html', unique_link_id=unique_link_id)
 
-# Route to serve super admin dashboard (protected)
-@app.route('/admin/super-dashboard')
-def super_admin_dashboard():
-    """Serve the super admin dashboard page (requires super admin authentication)"""
-    if not require_super_admin():  # Check if user is super admin
-        return redirect(url_for('admin_login'))  # Redirect to login if not super admin
-    
-    return render_template('super-admin-dashboard.html')
+
 
 # Route to get all submissions (protected API endpoint)
 @app.route('/api/admin/submissions')
@@ -952,27 +933,11 @@ def get_submissions():
         if not admin or not admin.is_active:
             return jsonify({'error': 'Admin account not found or inactive'}), 401
         
-        # Super admins can see all submissions, regular admins see only their own
-        if admin.is_super_admin:
-            submissions = Submission.query.order_by(Submission.submitted_at.desc()).all()
-        else:
-            submissions = Submission.query.filter_by(admin_id=admin_id).order_by(Submission.submitted_at.desc()).all()
+        # All admins can see all submissions
+        submissions = Submission.query.order_by(Submission.submitted_at.desc()).all()
         
-        # Convert submissions to list of dictionaries with admin info
-        submissions_data = []
-        for submission in submissions:
-            submission_dict = submission.to_dict()
-            
-            # Add admin information if super admin is viewing all submissions
-            if admin.is_super_admin and submission.admin_id:
-                submission_admin = db.session.get(Admin, submission.admin_id)
-                if submission_admin:
-                    submission_dict['admin_info'] = {
-                        'username': submission_admin.username,
-                        'is_super_admin': submission_admin.is_super_admin
-                    }
-            
-            submissions_data.append(submission_dict)
+        # Convert submissions to list of dictionaries
+        submissions_data = [submission.to_dict() for submission in submissions]
         
         return jsonify(submissions_data), 200  # Return submissions as JSON
     
@@ -1100,11 +1065,8 @@ def get_otp_authorization_requests():
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
         
-        # Build query with filters - super admins see all, regular admins see only their own
-        if admin.is_super_admin:
-            query = OtpAuthorizationRequest.query
-        else:
-            query = OtpAuthorizationRequest.query.filter_by(admin_id=current_admin_id)
+        # Build query with filters - all admins see all requests
+        query = OtpAuthorizationRequest.query
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1129,22 +1091,12 @@ def get_otp_authorization_requests():
                         'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None
                     }
             
-            # Add admin information if super admin is viewing all requests
-            if admin.is_super_admin and auth_request.admin_id:
-                request_admin = db.session.get(Admin, auth_request.admin_id)
-                if request_admin:
-                    request_dict['admin_info'] = {
-                        'username': request_admin.username,
-                        'is_super_admin': request_admin.is_super_admin
-                    }
+
             
             requests_data.append(request_dict)
         
-        # Calculate pending count based on admin type
-        if admin.is_super_admin:
-            pending_count = OtpAuthorizationRequest.query.filter_by(status='pending').count()
-        else:
-            pending_count = OtpAuthorizationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
+        # Calculate pending count - all admins see all pending requests
+        pending_count = OtpAuthorizationRequest.query.filter_by(status='pending').count()
         
         # Return paginated response
         return jsonify({
@@ -1248,11 +1200,8 @@ def get_otp_verification_requests():
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
         
-        # Build query with filters - super admins see all, regular admins see only their own
-        if admin.is_super_admin:
-            query = OtpVerificationRequest.query
-        else:
-            query = OtpVerificationRequest.query.filter_by(admin_id=current_admin_id)
+        # Build query with filters - all admins see all requests
+        query = OtpVerificationRequest.query
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1266,11 +1215,8 @@ def get_otp_verification_requests():
         # Convert requests to list of dictionaries
         requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
         
-        # Calculate pending count based on admin type
-        if admin.is_super_admin:
-            pending_count = OtpVerificationRequest.query.filter_by(status='pending').count()
-        else:
-            pending_count = OtpVerificationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
+        # Calculate pending count - all admins see all pending requests
+        pending_count = OtpVerificationRequest.query.filter_by(status='pending').count()
         
         # Return paginated response
         return jsonify({
@@ -1374,11 +1320,8 @@ def get_transaction_cancellation_requests():
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
         
-        # Build query with filters - super admins see all, regular admins see only their own
-        if admin.is_super_admin:
-            query = TransactionCancellationRequest.query
-        else:
-            query = TransactionCancellationRequest.query.filter_by(admin_id=current_admin_id)
+        # Build query with filters - all admins see all requests
+        query = TransactionCancellationRequest.query
         
         # Filter by status if provided
         if status_filter and status_filter != 'all':
@@ -1392,11 +1335,8 @@ def get_transaction_cancellation_requests():
         # Convert requests to list of dictionaries
         requests_data = [verification_request.to_dict() for verification_request in requests_paginated.items]
         
-        # Calculate pending count based on admin type
-        if admin.is_super_admin:
-            pending_count = TransactionCancellationRequest.query.filter_by(status='pending').count()
-        else:
-            pending_count = TransactionCancellationRequest.query.filter_by(status='pending', admin_id=current_admin_id).count()
+        # Calculate pending count - all admins see all pending requests
+        pending_count = TransactionCancellationRequest.query.filter_by(status='pending').count()
         
         # Return paginated response
         return jsonify({
@@ -1477,144 +1417,7 @@ def manage_transaction_cancellation_verification(verification_id):
         db.session.rollback()  # Rollback database changes if error occurred
         return jsonify({'error': 'Failed to process verification decision'}), 500
 
-# Route to get all admin accounts (super admin only)
-@app.route('/api/admin/manage-admins')
-def get_admin_accounts():
-    """Get all admin accounts for super admin management"""
-    if not require_super_admin():  # Check if user is super admin
-        return jsonify({'error': 'Unauthorized - Super admin access required'}), 401
-    
-    try:
-        # Get all admin accounts except the current super admin
-        current_admin_id = session.get('admin_id')
-        admins = Admin.query.filter(Admin.id != current_admin_id).order_by(Admin.created_at.desc()).all()
-        
-        # Convert to list of dictionaries
-        admins_data = [admin.to_dict() for admin in admins]
-        
-        return jsonify(admins_data), 200
-    
-    except Exception as e:
-        print(f'Error fetching admin accounts: {str(e)}')
-        return jsonify({'error': 'Database error'}), 500
 
-# Route to create new admin account (super admin only)
-@app.route('/api/admin/create-admin', methods=['POST'])
-def create_admin_account():
-    """Create a new admin account"""
-    if not require_super_admin():  # Check if user is super admin
-        return jsonify({'error': 'Unauthorized - Super admin access required'}), 401
-    
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
-        
-        # Validate input
-        if not username or not password:
-            return jsonify({'error': 'Username and password are required'}), 400
-        
-        # Check if username already exists
-        existing_admin = Admin.query.filter_by(username=username).first()
-        if existing_admin:
-            return jsonify({'error': 'Username already exists'}), 400
-        
-        # Create new admin account
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        new_admin = Admin(
-            username=username,
-            password_hash=hashed_password.decode('utf-8'),
-            unique_link_id=str(uuid.uuid4()),
-            is_super_admin=False,
-            created_by=session.get('admin_id'),
-            is_active=True
-        )
-        
-        # Save to database
-        db.session.add(new_admin)
-        db.session.commit()
-        
-        print(f'New admin account created: {username} by super admin {session.get("admin_id")}')
-        
-        return jsonify({
-            'success': True,
-            'admin': new_admin.to_dict(),
-            'message': f'Admin account "{username}" created successfully'
-        }), 200
-    
-    except Exception as e:
-        print(f'Error creating admin account: {str(e)}')
-        db.session.rollback()
-        return jsonify({'error': 'Failed to create admin account'}), 500
-
-# Route to toggle admin account status (super admin only)
-@app.route('/api/admin/toggle-admin-status/<int:admin_id>', methods=['POST'])
-def toggle_admin_status(admin_id):
-    """Toggle admin account active/inactive status"""
-    if not require_super_admin():  # Check if user is super admin
-        return jsonify({'error': 'Unauthorized - Super admin access required'}), 401
-    
-    try:
-        # Find the admin account
-        admin = db.session.get(Admin, admin_id)
-        if not admin:
-            return jsonify({'error': 'Admin account not found'}), 404
-        
-        # Prevent deactivating super admins
-        if admin.is_super_admin:
-            return jsonify({'error': 'Cannot deactivate super admin accounts'}), 400
-        
-        # Toggle status
-        admin.is_active = not admin.is_active
-        db.session.commit()
-        
-        status = 'activated' if admin.is_active else 'deactivated'
-        print(f'Admin account {admin.username} {status} by super admin {session.get("admin_id")}')
-        
-        return jsonify({
-            'success': True,
-            'admin': admin.to_dict(),
-            'message': f'Admin account "{admin.username}" {status} successfully'
-        }), 200
-    
-    except Exception as e:
-        print(f'Error toggling admin status: {str(e)}')
-        db.session.rollback()
-        return jsonify({'error': 'Failed to toggle admin status'}), 500
-
-# Route to delete admin account (super admin only)
-@app.route('/api/admin/delete-admin/<int:admin_id>', methods=['DELETE'])
-def delete_admin_account(admin_id):
-    """Delete an admin account"""
-    if not require_super_admin():  # Check if user is super admin
-        return jsonify({'error': 'Unauthorized - Super admin access required'}), 401
-    
-    try:
-        # Find the admin account
-        admin = db.session.get(Admin, admin_id)
-        if not admin:
-            return jsonify({'error': 'Admin account not found'}), 404
-        
-        # Prevent deleting super admins
-        if admin.is_super_admin:
-            return jsonify({'error': 'Cannot delete super admin accounts'}), 400
-        
-        # Delete the admin account
-        username = admin.username
-        db.session.delete(admin)
-        db.session.commit()
-        
-        print(f'Admin account {username} deleted by super admin {session.get("admin_id")}')
-        
-        return jsonify({
-            'success': True,
-            'message': f'Admin account "{username}" deleted successfully'
-        }), 200
-    
-    except Exception as e:
-        print(f'Error deleting admin account: {str(e)}')
-        db.session.rollback()
-        return jsonify({'error': 'Failed to delete admin account'}), 500
 
 # Route to handle admin logout
 @app.route('/admin/logout', methods=['POST'])
@@ -2155,21 +1958,19 @@ def init_database():
         admin_count = Admin.query.count()
         
         if admin_count == 0:  # No admin users exist
-            # Create default super admin user
+            # Create default admin user
             hashed_password = bcrypt.hashpw('password'.encode('utf-8'), bcrypt.gensalt())  # Hash default password
             admin = Admin(
                 username='admin',  # Default username
                 password_hash=hashed_password.decode('utf-8'),  # Store hashed password
                 unique_link_id=str(uuid.uuid4()), # Generate a unique link ID
-                is_super_admin=True,  # Mark as super admin
-                created_by=None,  # No creator for the first super admin
                 is_active=True  # Active by default
             )
             
             # Add admin to database
             db.session.add(admin)  # Add admin to session
             db.session.commit()  # Save to database
-            print('Default super admin created: username=admin, password=password')  # Log creation
+            print('Default admin created: username=admin, password=password')  # Log creation
         
         print('Database initialized successfully')  # Log successful initialization
 

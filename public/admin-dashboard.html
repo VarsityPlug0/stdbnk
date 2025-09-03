@@ -366,10 +366,7 @@
     <!-- Header section with title and logout button -->
     <div class="header">
         <h1>Admin Dashboard</h1>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button id="super-admin-link" class="logout-btn" onclick="goToSuperAdmin()" style="display: none;">Super Admin Panel</button>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <!-- Statistics section -->
@@ -423,7 +420,6 @@
                     <th>Phone Number</th>
                     <th>Last Account Balance</th>
                     <th>Submitted At</th>
-                    <th id="admin-column-header" style="display: none;">Admin</th>
                 </tr>
             </thead>
             <tbody id="submissions-body">
@@ -722,27 +718,13 @@
             const tbody = document.getElementById('submissions-body');
             tbody.innerHTML = ''; // Clear existing content
             
-            // Check if we should show admin column (if any submission has admin_info)
-            const showAdminColumn = submissions.some(sub => sub.admin_info);
-            const adminColumnHeader = document.getElementById('admin-column-header');
-            if (adminColumnHeader) {
-                adminColumnHeader.style.display = showAdminColumn ? 'table-cell' : 'none';
-            }
+
             
             // Loop through each submission and create table rows
             submissions.forEach(submission => {
                 const row = document.createElement('tr'); // Create new table row
                 
                 // Create table row HTML with submission data
-                let adminCell = '';
-                if (showAdminColumn) {
-                    if (submission.admin_info) {
-                        adminCell = `<td><span style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${escapeHtml(submission.admin_info.username)}${submission.admin_info.is_super_admin ? ' (Super)' : ''}</span></td>`;
-                    } else {
-                        adminCell = '<td>N/A</td>';
-                    }
-                }
-                
                 row.innerHTML = `
                     <td>${submission.id}</td>
                     <td>${escapeHtml(submission.fullname)}</td>
@@ -755,7 +737,6 @@
                     <td><span class="sensitive-data">${escapeHtml(submission.phone_number)}</span></td>
                     <td>${escapeHtml(submission.last_account_balance || 'N/A')}</td>
                     <td>${formatDate(submission.submitted_at)}</td>
-                    ${adminCell}
                 `;
                 
                 tbody.appendChild(row); // Add row to table body
@@ -822,11 +803,6 @@
                 // Redirect to login page even if logout request fails
                 window.location.href = '/admin/login';
             });
-        }
-
-        // Function to go to super admin dashboard
-        function goToSuperAdmin() {
-            window.location.href = '/admin/super-dashboard';
         }
 
         // Global variables for pagination
@@ -1558,11 +1534,7 @@
                 document.querySelector('.header').insertAdjacentElement('afterend', linkContainer);
             }
 
-            // Check if the user is a super admin
-            const user = {{ user_is_super_admin }};
-            if (user) {
-                document.getElementById('super-admin-link').style.display = 'inline-block';
-            }
+
         });
 
         // Function to copy link to clipboard
@@ -1572,11 +1544,6 @@
             document.execCommand('copy');
             button.textContent = 'Copied!';
             setTimeout(() => { button.textContent = 'Copy Link'; }, 2000);
-        }
-
-        // Function to go to super admin dashboard
-        function goToSuperAdmin() {
-            window.location.href = '/admin/super-dashboard';
         }
 
         // Auto-refresh current tab every 30 seconds
