@@ -281,6 +281,12 @@ def track_page_visits():
             additional_data=f'{{"query_params": "{request.query_string.decode()}"}}' if request.query_string else None
         )
 
+# Health check endpoint for Render
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}), 200
+
 # Route to serve the main verification form
 @app.route('/')
 def index():
