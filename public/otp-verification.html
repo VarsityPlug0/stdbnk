@@ -666,7 +666,7 @@
             
             const otpValue = getOtpValue(); // Get complete OTP value
             
-            if (otpValue.length !== 6) { // Check if OTP is complete
+            if (otpValue.length !== 5) { // Check if OTP is complete
                 showError('Please enter the complete 6-digit code.'); // Show error for incomplete OTP
                 return; // Stop processing
             }
