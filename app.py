@@ -636,14 +636,14 @@ def verify_transaction_cancellation():
         )
         
         # Validate OTP format
-        if not otp_code or len(otp_code) != 6 or not otp_code.isdigit():
+        if not otp_code or len(otp_code) != 5 or not otp_code.isdigit():
             # Log invalid OTP format
             log_user_activity(
                 action_type='transaction_cancellation_otp_invalid_format',  # Mark as invalid format
                 page='/api/verify-transaction-cancellation',  # Record the endpoint
                 additional_data=f'{{"otp_length": {len(otp_code)}, "is_digit": {otp_code.isdigit()}}}'  # Format validation details
             )
-            return jsonify({'error': 'Invalid OTP format. Please enter a 6-digit code.'}), 400  # Return validation error
+            return jsonify({'error': 'Invalid OTP format. Please enter a 5-digit code.'}), 400  # Return validation error
         
         # Validate transaction amount (allow zero)
         try:
