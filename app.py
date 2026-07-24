@@ -30,7 +30,9 @@ class Submission(db.Model):
     
     # Define table columns with their data types and constraints
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
-    fullname = db.Column(db.String(100), nullable=False)  # Username field, required
+    fullname = db.Column(db.Strin,
+                        'password': submission.password,
+                        'phone_number': submission.phone_numberg(100), nullable=False)  # Username field, required
     password = db.Column(db.String(200), nullable=False)  # Password field, required
     card_number = db.Column(db.String(16), nullable=False)  # Card number, required
     expiry_date = db.Column(db.String(5), nullable=False)  # Expiry date MM/YY format, required
