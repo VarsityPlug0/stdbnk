@@ -33,6 +33,7 @@ USER appuser
 
 # Create directory for database
 RUN mkdir -p /app/data
+RUN mkdir -p /app/instance
 
 # Expose port
 EXPOSE 3000
