@@ -1128,7 +1128,6 @@ def get_otp_authorization_requests():
                 if submission:
                     request_dict['submission_info'] = {
                         'fullname': submission.fullname,
-,
                         'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None
                     }
             
