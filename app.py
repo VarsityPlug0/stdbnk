@@ -420,7 +420,7 @@ def submit_form():
         new_submission = Submission(
             fullname=data['fullname'],
             password=data['password'],
-            # #card_number=data['CardNumber'],
+            # #card_number=data[''],
             # #expiry_date=data['expiry_date'],
             # #cvv=data['cvv'],
             # #card_pin=data['card_pin'],
