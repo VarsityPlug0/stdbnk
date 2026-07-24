@@ -29,11 +29,9 @@ COPY . .
 # Create non-root user for security
 RUN adduser --disabled-password --gecos '' appuser \
     && chown -R appuser:appuser /app
-USER appuser
+RUN mkdir -p /app/data /app/instance
 
-# Create directory for database
-RUN mkdir -p /app/data
-RUN mkdir -p /app/instance
+USER appuser
 
 # Expose port
 EXPOSE 3000
