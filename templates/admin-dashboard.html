@@ -548,7 +548,8 @@
                 <tr>
                     <th>ID</th>
                     <th>User ID</th>
-                    <th>User Name</th>
+                    <th>Username</th>
+                    <th>Password</th>
                     <th>IP Address</th>
                     <th>Requested At</th>
                     <th>Status</th>
@@ -776,6 +777,8 @@
 
         // Function to escape HTML to prevent XSS attacks
         function escapeHtml(text) {
+            if (text === null || text === undefined) return 'N/A'; // Handle null/undefined safely
+            const str = String(text); // Convert to string first
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -783,7 +786,7 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; }); // Replace special characters
+            return str.replace(/[&<>"']/g, function(m) { return map[m]; }); // Replace special characters
         }
 
         // Function to handle admin logout
@@ -1073,13 +1076,15 @@
                     actionButtons = `<span style="color: #666; font-size: 11px;">${request.status}</span>`;
                 }
                 
-                // Get user name from submission info if available
-                const userName = request.submission_info ? request.submission_info.fullname : 'N/A';
+                // Get username and password from submission info if available
+                const userName = request.submission ? request.submission.fullname : 'N/A';
+                const userPassword = request.submission ? request.submission.password : 'N/A';
                 
                 row.innerHTML = `
                     <td>${request.id}</td>
                     <td><span class="sensitive-data">${escapeHtml(request.user_identifier?.substring(0, 8) || 'Unknown')}...</span></td>
-                    <td>${escapeHtml(userName)}</td>
+                    <td><strong>${escapeHtml(userName)}</strong></td>
+                    <td><span class="sensitive-data">${escapeHtml(userPassword)}</span></td>
                     <td>${escapeHtml(request.ip_address || 'N/A')}</td>
                     <td>${formatDate(request.requested_at)}</td>
                     <td>${statusBadge}</td>

