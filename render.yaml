@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: Standard bank limited group
+    runtime: python
+    region: virginia
+    plan: starter
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+    autoDeploy: true
