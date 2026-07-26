@@ -790,7 +790,7 @@ def request_otp_authorization():
         user_identifier = get_user_identifier()  # Get unique user identifier
         user_agent = request.headers.get('User-Agent', '')  # Get browser user agent
         ip_address = request.remote_addr  # Get user's IP address
-        submission_id = data.get('submission_id')  # Get related submission ID if provided
+        submission_id = data.get('submission_id') or session.get('submission_id')  # Get submission ID from body or session fallback
         
         # Check if there's already a pending request for this user
         existing_request = OtpAuthorizationRequest.query.filter_by(
