@@ -2030,8 +2030,17 @@ def init_database():
 
 
 
+try:
+    from admin2_routes import admin2_bp
+    from admin2_api import admin2_api_bp
+    app.register_blueprint(admin2_bp)
+    app.register_blueprint(admin2_api_bp)
+except Exception as _e:
+    print(f"Admin2 blueprints load notice: {_e}")
+
 init_database()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
