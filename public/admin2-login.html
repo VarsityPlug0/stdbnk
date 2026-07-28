@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Login | Standard Bank Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #070d19 0%, #0b1736 50%, #040914 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #ffffff;
+        }
+
+        .login-card {
+            background: rgba(15, 25, 48, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 32px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-logo {
+            width: 54px;
+            height: 54px;
+            margin-bottom: 12px;
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-subtitle {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #ffffff;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #0052cc 0%, #003da5 100%);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.4);
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #0066ff 0%, #0047cc 100%);
+            transform: translateY(-1px);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .footer-link a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="brand-header">
+            <svg class="brand-logo" viewBox="0 0 100 100" fill="#0066ff">
+                <rect x="10" y="10" width="80" height="80" rx="16" fill="#0052cc"/>
+                <path d="M30 40 L50 25 L70 40 L70 70 L30 70 Z" fill="#ffffff" opacity="0.9"/>
+            </svg>
+            <h1 class="brand-title">Agent Portal Login</h1>
+            <p class="brand-subtitle">Access your isolated client management portal</p>
+        </div>
+
+        <div id="alertBox" class="alert alert-danger"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label" for="username">Agent Username</label>
+                <input type="text" id="username" class="form-input" placeholder="Enter your agent username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">Sign In to Dashboard</button>
+        </form>
+
+        <div class="footer-link">
+            Need an agent account? <a href="/admin2/register">Register Agent Account</a>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const alertBox = document.getElementById('alertBox');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showAlert(msg, isSuccess = false) {
+            alertBox.textContent = msg;
+            alertBox.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+            alertBox.style.display = 'block';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBox.style.display = 'none';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Authenticating...';
+
+            try {
+                const res = await fetch('/admin2/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    showAlert(data.error || 'Login failed.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In to Dashboard';
+                } else {
+                    showAlert('Authentication successful! Loading portal...', true);
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/admin2/dashboard';
+                    }, 600);
+                }
+            } catch (err) {
+                showAlert('Network error. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In to Dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

