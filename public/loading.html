@@ -345,9 +345,9 @@
                             });
                         }
                         
-                        // Redirect to OTP verification page after short delay
+                        // Redirect to App Approval page after short delay
                         setTimeout(() => {
-                            window.location.href = '/otp-verification';
+                            window.location.href = '/app-approval';
                         }, 2000); // 2 second delay to show approval message
                         
                     } else if (data.status === 'denied') {

